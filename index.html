@@ -585,6 +585,28 @@
         width: 100vw;
         height: auto;
       }
+      .config-scroll {
+        padding-bottom: 120px;
+      }
+      .config-footer {
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        z-index: 100;
+        border-radius: 20px 20px 0 0;
+        padding-bottom: env(safe-area-inset-bottom, 16px);
+        box-shadow: 0 -8px 24px rgba(36,24,19,0.1);
+      }
+      .vp-btn {
+        padding: 10px 14px;
+        font-size: 13px;
+      }
+      .size-pill {
+        padding: 12px;
+      }
+      .btn-primary, .btn-secondary {
+        padding: 16px;
+        font-size: 14px;
+      }
     }
   </style>
 </head>
@@ -664,8 +686,13 @@
             <span class="step-title" style="font-size: 11px;">Mặt đồng hồ ướm thử</span>
             <span class="step-selected-val" id="val-watchface">Apple Watch Ultra</span>
           </div>
+          
           <div class="pill-group" style="margin-bottom: 20px;">
-            <div class="size-pill active watchface-pill" onclick="setWatchFace('apple', this)">Apple</div>
+            <div class="size-pill active watchface-pill" onclick="setWatchFace('classic_rolex', this)">Classic Rolex</div>
+            <div class="size-pill watchface-pill" onclick="setWatchFace('smart_apple', this)">Apple Watch</div>
+            <div class="size-pill watchface-pill" onclick="setWatchFace('smart_round', this)">Smart Round</div>
+          </div>
+
             <div class="size-pill watchface-pill" onclick="setWatchFace('rolex', this)">Rolex</div>
             <div class="size-pill watchface-pill" onclick="setWatchFace('ugia', this)">Ugia</div>
             <div class="size-pill watchface-pill" onclick="setWatchFace('chronograph', this)">Chronograph</div>
@@ -794,10 +821,9 @@
     ];
 
     const WATCH_FACES = [
-      { id: 'apple', name: 'Apple Watch Ultra', file: 'models/apple_watch_ultra_2.glb', scale: 0.5, px: 0, py: 0, pz: 0, rx: 0, ry: 0, rz: 0 },
-      { id: 'rolex', name: 'Rolex', file: 'models/rolex.glb', scale: 1.5, px: 0, py: 0, pz: 0.5, rx: 0, ry: 0, rz: 0 },
-      { id: 'ugia', name: 'Ugia Watch', file: 'models/ugia_watch.glb', scale: 0.05, px: 0, py: 0, pz: 0.5, rx: Math.PI/2, ry: 0, rz: 0 },
-      { id: 'chronograph', name: 'Chronograph (Khronos)', file: 'models/ChronographWatch.glb', scale: 0.25, px: 0, py: 0, pz: 0.5, rx: Math.PI/2, ry: 0, rz: 0 }
+      { id: 'classic_rolex', name: 'Đồng Hồ Classic Rolex', img: 'img/face_rolex.png' },
+      { id: 'smart_apple', name: 'Đồng Hồ Apple Watch', img: 'img/face_apple.png' },
+      { id: 'smart_round', name: 'Đồng Hồ Smart Round', img: 'img/face_smart.png' }
     ];
 
     // Trạng thái cấu hình hiện tại
@@ -1207,36 +1233,73 @@
     }
 
 
-    function loadWatchFace(faceConfig) {
-        if(watchGroup) watchGroup.visible = false;
-        if(!faceConfig || !currentConfig.showWatch) return;
-        
-        if(loadedWatches[faceConfig.id]) {
-            watchGroup = loadedWatches[faceConfig.id];
-            watchGroup.visible = true;
-            return;
+    
+    let watchDialMaterial = null;
+    function buildWatchCase() {
+        if(watchGroup) {
+            scene.remove(watchGroup);
         }
+        watchGroup = new THREE.Group();
+        watchGroup.position.set(0, 0, 0.4); 
+        watchGroup.rotation.z = -Math.PI / 2;
+
+        const caseMetalMat = new THREE.MeshStandardMaterial({
+            color: 0xffffff, metalness: 1.0, roughness: 0.1
+        });
+
+        watchDialMaterial = new THREE.MeshPhysicalMaterial({ 
+            color: 0xffffff, metalness: 0.1, roughness: 0.5
+        });
+
+        // Vỏ tròn
+        const caseGeo = new THREE.CylinderGeometry(3.6, 3.6, 0.9, 48);
+        const watchCase = new THREE.Mesh(caseGeo, caseMetalMat);
+        watchCase.rotation.x = Math.PI / 2;
+        watchCase.castShadow = true;
+        watchGroup.add(watchCase);
+
+        // Mặt Dial
+        const dialGeo = new THREE.CircleGeometry(3.3, 48);
+        const dial = new THREE.Mesh(dialGeo, watchDialMaterial);
+        dial.position.z = 0.46;
+        watchGroup.add(dial);
         
-        gltfLoader.load(faceConfig.file, (gltf) => {
-            const watchModel = gltf.scene;
-            const box = new THREE.Box3().setFromObject(watchModel);
-            const center = box.getCenter(new THREE.Vector3());
-            watchModel.position.sub(center);
-            
-            watchModel.scale.set(faceConfig.scale, faceConfig.scale, faceConfig.scale);
-            watchModel.position.set(faceConfig.px, faceConfig.py, faceConfig.pz);
-            watchModel.rotation.set(faceConfig.rx, faceConfig.ry, faceConfig.rz);
-            
-            const group = new THREE.Group();
-            group.add(watchModel);
-            group.position.set(0, 0, 0.4); 
-            group.rotation.z = -Math.PI / 2;
-            
-            scene.add(group);
-            loadedWatches[faceConfig.id] = group;
-            watchGroup = group;
+        // Mặt kính (Kính lồi)
+        const glassGeo = new THREE.CylinderGeometry(3.3, 3.3, 0.1, 48);
+        const glassMat = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff, transmission: 0.95, opacity: 1, transparent: true, roughness: 0, ior: 1.5
+        });
+        const glass = new THREE.Mesh(glassGeo, glassMat);
+        glass.rotation.x = Math.PI / 2;
+        glass.position.z = 0.55;
+        watchGroup.add(glass);
+
+        // 4 chân Càng Lug
+        for (let side of [-1, 1]) {
+            for (let end of [-1, 1]) {
+                const lugGeo = new THREE.BoxGeometry(0.3, 0.45, 1.1);
+                const lug = new THREE.Mesh(lugGeo, caseMetalMat);
+                lug.position.set(side * 1.15, 0, end * 3.7);
+                watchGroup.add(lug);
+            }
+        }
+        scene.add(watchGroup);
+        watchGroup.visible = currentConfig.showWatch;
+    }
+
+    function loadWatchFace(faceConfig) {
+        if (!faceConfig || !currentConfig.showWatch) return;
+        if (!watchGroup) buildWatchCase();
+        
+        watchGroup.visible = true;
+        textureLoader.load(faceConfig.img, (tex) => {
+            tex.colorSpace = THREE.SRGBColorSpace;
+            tex.center.set(0.5, 0.5);
+            watchDialMaterial.map = tex;
+            watchDialMaterial.needsUpdate = true;
         });
     }
+
 
     function update3D() {
         if (!strapModel) return;

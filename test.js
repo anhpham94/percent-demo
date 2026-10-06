@@ -1,799 +1,3 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PERCENT 3D Bespoke Studio - Thiết Kế Dây Da Đồng Hồ Thủ Công</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
-  
-  <!-- Three.js & OrbitControls -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-
-  <style>
-    :root {
-      --pc-cream: #F6F0E5;
-      --pc-cream-light: #FAF7F2;
-      --pc-cream-card: #FFFFFF;
-      --pc-espresso: #241813;
-      --pc-cognac: #9C5A2C;
-      --pc-gold: #C29D59;
-      --pc-border: #E8DFD3;
-      --pc-text-muted: #7A6F68;
-      --pc-text-dark: #221A15;
-      --pc-shadow-sm: 0 2px 8px rgba(36, 24, 19, 0.06);
-      --pc-shadow-md: 0 8px 24px rgba(36, 24, 19, 0.08);
-      --pc-shadow-lg: 0 16px 40px rgba(36, 24, 19, 0.12);
-      --font-body: 'Be Vietnam Pro', -apple-system, sans-serif;
-      --font-serif: 'Playfair Display', Georgia, serif;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: var(--font-body);
-      background-color: var(--pc-cream);
-      color: var(--pc-text-dark);
-      overflow-x: hidden;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    /* Header Brand */
-    header {
-      height: 60px;
-      background: rgba(246, 240, 229, 0.95);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--pc-border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 24px;
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 50;
-    }
-    .brand-wrap {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      text-decoration: none;
-      color: var(--pc-espresso);
-    }
-    .brand-wrap img {
-      height: 32px;
-      width: auto;
-      object-fit: contain;
-    }
-    .brand-text {
-      display: flex;
-      flex-direction: column;
-    }
-    .brand-title {
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-    }
-    .brand-sub {
-      font-size: 10px;
-      color: var(--pc-cognac);
-      font-style: italic;
-      letter-spacing: 0.5px;
-    }
-    .header-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 12px;
-      border-radius: 999px;
-      background: rgba(156, 90, 44, 0.1);
-      color: var(--pc-cognac);
-      font-size: 11px;
-      font-weight: 600;
-    }
-    .pulse-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--pc-cognac);
-      animation: pulse 1.5s infinite;
-    }
-    @keyframes pulse {
-      0% { transform: scale(0.9); opacity: 0.7; }
-      50% { transform: scale(1.3); opacity: 1; }
-      100% { transform: scale(0.9); opacity: 0.7; }
-    }
-
-    /* Main Container Split */
-    .app-container {
-      margin-top: 60px;
-      display: flex;
-      height: calc(100vh - 60px);
-      width: 100vw;
-      position: relative;
-    }
-
-    /* 3D Viewport (Left) */
-    .viewport-container {
-      flex: 1;
-      height: 100%;
-      position: relative;
-      background: radial-gradient(circle at 50% 50%, #FAF6EE 0%, #ECE3D2 100%);
-      overflow: hidden;
-    }
-    #webgl-canvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-      cursor: grab;
-    }
-    #webgl-canvas:active {
-      cursor: grabbing;
-    }
-
-    /* Viewport Floating Controls */
-    .viewport-overlay {
-      position: absolute;
-      top: 16px;
-      left: 16px;
-      right: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      pointer-events: none;
-    }
-    .camera-presets, .view-toggles {
-      display: flex;
-      gap: 8px;
-      pointer-events: auto;
-    }
-    .vp-btn {
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(8px);
-      border: 1px solid var(--pc-border);
-      border-radius: 8px;
-      padding: 6px 12px;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--pc-espresso);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      box-shadow: var(--pc-shadow-sm);
-      transition: all 0.2s ease;
-    }
-    .vp-btn:hover {
-      background: #FFFFFF;
-      border-color: var(--pc-cognac);
-      color: var(--pc-cognac);
-      transform: translateY(-1px);
-    }
-    .vp-btn.active {
-      background: var(--pc-espresso);
-      color: #FFFFFF;
-      border-color: var(--pc-espresso);
-    }
-
-    /* Floating Hint */
-    .hint-chip {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(36, 24, 19, 0.75);
-      backdrop-filter: blur(6px);
-      color: #FFFFFF;
-      font-size: 11px;
-      padding: 6px 16px;
-      border-radius: 999px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      pointer-events: none;
-      animation: fadeIn 0.8s ease;
-    }
-
-    /* Configurator Drawer / Sidebar (Right) */
-    .config-sidebar {
-      width: 440px;
-      height: 100%;
-      background: var(--pc-cream-card);
-      border-left: 1px solid var(--pc-border);
-      display: flex;
-      flex-direction: column;
-      box-shadow: -4px 0 20px rgba(36, 24, 19, 0.04);
-      z-index: 20;
-    }
-    .config-scroll {
-      flex: 1;
-      overflow-y: auto;
-      padding: 24px;
-    }
-
-    /* Section Styles */
-    .step-section {
-      margin-bottom: 28px;
-      padding-bottom: 24px;
-      border-bottom: 1px solid var(--pc-border);
-    }
-    .step-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      margin-bottom: 14px;
-    }
-    .step-title {
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      color: var(--pc-espresso);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .step-num {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: var(--pc-cognac);
-      color: #FFFFFF;
-      font-size: 11px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .step-selected-val {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--pc-cognac);
-    }
-
-    /* Grid Options */
-    .option-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
-    .leather-card {
-      border: 1.5px solid var(--pc-border);
-      border-radius: 10px;
-      padding: 8px;
-      cursor: pointer;
-      text-align: center;
-      transition: all 0.2s ease;
-      background: #FFFFFF;
-      position: relative;
-    }
-    .leather-card:hover {
-      border-color: var(--pc-cognac);
-      transform: translateY(-2px);
-      box-shadow: var(--pc-shadow-sm);
-    }
-    .leather-card.active {
-      border-color: var(--pc-cognac);
-      background: rgba(156, 90, 44, 0.04);
-      box-shadow: 0 0 0 1px var(--pc-cognac);
-    }
-    .leather-img-wrap {
-      width: 100%;
-      aspect-ratio: 1;
-      border-radius: 6px;
-      overflow: hidden;
-      margin-bottom: 6px;
-      background: #F4EFE6;
-    }
-    .leather-img-wrap img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .leather-name {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--pc-espresso);
-      line-height: 1.3;
-    }
-    .leather-color-tag {
-      font-size: 10px;
-      color: var(--pc-text-muted);
-      margin-top: 2px;
-    }
-    .leather-price {
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--pc-cognac);
-      margin-top: 2px;
-    }
-
-    /* Swatches for Stitch & Buckle */
-    .swatch-group {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .stitch-swatch {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      cursor: pointer;
-      padding: 6px 10px;
-      border-radius: 8px;
-      border: 1px solid var(--pc-border);
-      transition: all 0.2s ease;
-    }
-    .stitch-swatch:hover, .stitch-swatch.active {
-      border-color: var(--pc-cognac);
-      background: rgba(156, 90, 44, 0.05);
-    }
-    .stitch-dot {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      border: 1.5px solid rgba(0,0,0,0.15);
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
-    }
-    .stitch-label {
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--pc-espresso);
-    }
-
-    /* Buckle Cards */
-    .buckle-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-    }
-    .buckle-card {
-      border: 1px solid var(--pc-border);
-      border-radius: 8px;
-      padding: 8px 4px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .buckle-card:hover, .buckle-card.active {
-      border-color: var(--pc-cognac);
-      background: rgba(156, 90, 44, 0.05);
-    }
-    .buckle-metal-pill {
-      width: 24px;
-      height: 12px;
-      border-radius: 6px;
-      margin: 0 auto 6px auto;
-      border: 1px solid rgba(0,0,0,0.1);
-    }
-    .buckle-name {
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--pc-espresso);
-    }
-
-    /* Size Selector */
-    .pill-group {
-      display: flex;
-      gap: 8px;
-    }
-    .size-pill {
-      flex: 1;
-      padding: 8px;
-      text-align: center;
-      border: 1px solid var(--pc-border);
-      border-radius: 8px;
-      font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .size-pill:hover, .size-pill.active {
-      border-color: var(--pc-cognac);
-      background: var(--pc-espresso);
-      color: #FFFFFF;
-    }
-
-    /* Engraving Input */
-    .engrave-input-wrap {
-      display: flex;
-      gap: 8px;
-      margin-top: 8px;
-    }
-    .engrave-input {
-      flex: 1;
-      border: 1.5px solid var(--pc-border);
-      border-radius: 8px;
-      padding: 10px 14px;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      outline: none;
-      transition: all 0.2s ease;
-      background: #FFFFFF;
-      color: var(--pc-espresso);
-    }
-    .engrave-input:focus {
-      border-color: var(--pc-cognac);
-      box-shadow: 0 0 0 2px rgba(156, 90, 44, 0.15);
-    }
-    .engrave-hint {
-      font-size: 11px;
-      color: var(--pc-text-muted);
-      margin-top: 6px;
-      font-style: italic;
-    }
-
-    /* Bottom Action Bar */
-    .config-footer {
-      padding: 18px 24px;
-      background: #FFFFFF;
-      border-top: 1px solid var(--pc-border);
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      box-shadow: 0 -4px 16px rgba(36, 24, 19, 0.05);
-    }
-    .price-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-    }
-    .price-label {
-      font-size: 12px;
-      color: var(--pc-text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .price-amount {
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--pc-cognac);
-      font-family: var(--font-serif);
-    }
-    .action-btn-row {
-      display: flex;
-      gap: 10px;
-    }
-    .btn-secondary {
-      flex: 1;
-      padding: 12px;
-      border: 1px solid var(--pc-border);
-      border-radius: 8px;
-      background: #FFFFFF;
-      color: var(--pc-espresso);
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition: all 0.2s;
-    }
-    .btn-secondary:hover {
-      background: var(--pc-cream);
-      border-color: var(--pc-cognac);
-    }
-    .btn-primary {
-      flex: 2;
-      padding: 12px;
-      border: none;
-      border-radius: 8px;
-      background: var(--pc-espresso);
-      color: #FFFFFF;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.2s;
-      box-shadow: 0 4px 12px rgba(36, 24, 19, 0.2);
-    }
-    .btn-primary:hover {
-      background: var(--pc-cognac);
-      transform: translateY(-1px);
-    }
-
-    /* Modal Checkout */
-    .modal-backdrop {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(36, 24, 19, 0.6);
-      backdrop-filter: blur(8px);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-      padding: 16px;
-    }
-    .modal-box {
-      width: 100%;
-      max-width: 480px;
-      background: #FFFFFF;
-      border-radius: 16px;
-      padding: 28px;
-      box-shadow: var(--pc-shadow-lg);
-      position: relative;
-      animation: scaleUp 0.3s ease;
-    }
-    @keyframes scaleUp {
-      from { transform: scale(0.92); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
-    .modal-close {
-      position: absolute;
-      top: 16px; right: 16px;
-      background: #F4EFE6;
-      border: none;
-      width: 28px; height: 28px;
-      border-radius: 50%;
-      font-size: 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--pc-espresso);
-    }
-    .modal-title {
-      font-size: 18px;
-      font-family: var(--font-serif);
-      color: var(--pc-espresso);
-      margin-bottom: 6px;
-    }
-    .modal-desc {
-      font-size: 12px;
-      color: var(--pc-text-muted);
-      margin-bottom: 20px;
-      line-height: 1.5;
-    }
-    .summary-card {
-      background: var(--pc-cream);
-      border-radius: 10px;
-      padding: 14px;
-      margin-bottom: 20px;
-      font-size: 12px;
-    }
-    .summary-row {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-    .summary-row:last-child { margin-bottom: 0; }
-    .summary-label { color: var(--pc-text-muted); }
-    .summary-val { font-weight: 600; color: var(--pc-espresso); }
-
-    /* Mobile Responsive */
-    @media (max-width: 900px) {
-      .app-container {
-        flex-direction: column;
-        height: auto;
-      }
-      .viewport-container {
-        height: 52vh;
-        width: 100vw;
-      }
-      .config-sidebar {
-        width: 100vw;
-        height: auto;
-      }
-      .config-scroll {
-        padding-bottom: 120px;
-      }
-      .config-footer {
-        position: fixed;
-        bottom: 0; left: 0; right: 0;
-        z-index: 100;
-        border-radius: 20px 20px 0 0;
-        padding-bottom: env(safe-area-inset-bottom, 16px);
-        box-shadow: 0 -8px 24px rgba(36,24,19,0.1);
-      }
-      .vp-btn {
-        padding: 10px 14px;
-        font-size: 13px;
-      }
-      .size-pill {
-        padding: 12px;
-      }
-      .btn-primary, .btn-secondary {
-        padding: 16px;
-        font-size: 14px;
-      }
-    }
-  </style>
-</head>
-<body>
-
-  <!-- Header -->
-  <header>
-    <a class="brand-wrap" href="https://shopdongho.com/percent/">
-      <img src="img/logo.png" alt="Percent Logo">
-      <div class="brand-text">
-        <span class="brand-title">PERCENT BESPOKE</span>
-        <span class="brand-sub">Atelier Chế Tác Thủ Công 18 Bước</span>
-      </div>
-    </a>
-    <div class="header-badge">
-      <span class="pulse-dot"></span>
-      <span>3D Studio Live</span>
-    </div>
-  </header>
-
-  <!-- Main View -->
-  <div class="app-container">
-    
-    <!-- Left: 3D Canvas -->
-    <div class="viewport-container">
-      <canvas id="webgl-canvas"></canvas>
-
-      <!-- Overlay Floating Bar -->
-      <div class="viewport-overlay">
-        <div class="camera-presets">
-          <button class="vp-btn active" onclick="setCameraView('overview')">📐 Toàn Cảnh</button>
-          <button class="vp-btn" onclick="setCameraView('buckle')">🔒 Khóa & Đỉa</button>
-          <button class="vp-btn" onclick="setCameraView('tail')">✂ Mũi Dây</button>
-          <button class="vp-btn" onclick="setCameraView('lining')">🔄 Lót Zermatt</button>
-        </div>
-        <div class="view-toggles">
-          <button class="vp-btn" id="btn-toggle-watch" onclick="toggleWatchCase()">⌚ Ướm Đồng Hồ: BẬT</button>
-          <button class="vp-btn" id="btn-toggle-rotate" onclick="toggleAutoRotate()">🔄 Tự Xoay</button>
-        </div>
-      </div>
-
-      <div class="hint-chip">
-        <span>👆 Giữ chuột/chạm để xoay 360° & cuộn để phóng to</span>
-      </div>
-    </div>
-
-    <!-- Right: Configurator Sidebar -->
-    <div class="config-sidebar">
-      <div class="config-scroll">
-
-        <!-- Step 1: Chọn Da Thật Percent -->
-        <div class="step-section">
-          <div class="step-header">
-            <span class="step-title"><span class="step-num">1</span> Chất Liệu & Màu Da</span>
-            <span class="step-selected-val" id="val-leather">Agon Soil (Nâu đất Ý)</span>
-          </div>
-          <div class="option-grid" id="leather-grid">
-            <!-- Rendered by JS -->
-          </div>
-        </div>
-
-        <!-- Step 2: Màu Chỉ May Thủ Công -->
-        <div class="step-section">
-          <div class="step-header">
-            <span class="step-title"><span class="step-num">2</span> Đường Chỉ May (Saddle Stitch)</span>
-            <span class="step-selected-val" id="val-stitch">Chỉ kem vintage</span>
-          </div>
-          <div class="swatch-group" id="stitch-group">
-            <!-- Rendered by JS -->
-          </div>
-        </div>
-
-        <!-- Step 3: Khóa & Kim Loại -->
-        <div class="step-section">
-          <!-- Watch face toggle -->
-          <div class="step-header" style="margin-bottom: 10px;">
-            <span class="step-title" style="font-size: 11px;">Mặt đồng hồ ướm thử</span>
-            <span class="step-selected-val" id="val-watchface">Apple Watch Ultra</span>
-          </div>
-          
-          <div class="pill-group" style="margin-bottom: 20px;">
-            <div class="size-pill active watchface-pill" onclick="setWatchFace('classic_rolex', this)">Classic Rolex</div>
-            <div class="size-pill watchface-pill" onclick="setWatchFace('smart_apple', this)">Apple Watch</div>
-            <div class="size-pill watchface-pill" onclick="setWatchFace('smart_round', this)">Smart Round</div>
-          </div>
-
-            <div class="size-pill watchface-pill" onclick="setWatchFace('rolex', this)">Rolex</div>
-            <div class="size-pill watchface-pill" onclick="setWatchFace('ugia', this)">Ugia</div>
-            <div class="size-pill watchface-pill" onclick="setWatchFace('chronograph', this)">Chronograph</div>
-          </div>
-
-          <div class="step-header">
-            <span class="step-title"><span class="step-num">3</span> Khóa & Màu Kim Loại</span>
-            <span class="step-selected-val" id="val-buckle">Bạc Inox (Khóa kim)</span>
-          </div>
-          <div style="margin-bottom: 12px;">
-            <div class="pill-group" style="margin-bottom: 10px;">
-              <div class="size-pill active" onclick="setBuckleType('tang', this)">Khóa Kim Chuẩn</div>
-              <div class="size-pill" onclick="setBuckleType('deployant', this)">Khóa Bướm (+150k)</div>
-            </div>
-            <div class="buckle-grid" id="buckle-grid">
-              <!-- Rendered by JS -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Step 4: Kích Thước & Đo Tay -->
-        <div class="step-section">
-          <div class="step-header">
-            <span class="step-title"><span class="step-num">4</span> Kích Thước Bản Dây (Lug)</span>
-            <span class="step-selected-val" id="val-lug">20 - 18 mm</span>
-          </div>
-          <div class="pill-group" style="margin-bottom: 12px;">
-            <div class="size-pill" onclick="setLugSize('18 - 16 mm', this)">18 - 16 mm</div>
-            <div class="size-pill active" onclick="setLugSize('20 - 18 mm', this)">20 - 18 mm</div>
-            <div class="size-pill" onclick="setLugSize('22 - 20 mm', this)">22 - 20 mm</div>
-          </div>
-          <div class="step-header" style="margin-top: 14px;">
-            <span class="step-title" style="font-size: 11px;">Chu vi cổ tay</span>
-            <span class="step-selected-val" id="val-wrist">16.5 cm (Chuẩn 115/75mm)</span>
-          </div>
-          <div class="pill-group">
-            <div class="size-pill" onclick="setWristSize('15.0 cm (Nhỏ 105/65mm)', this)">15 cm (Nhỏ)</div>
-            <div class="size-pill active" onclick="setWristSize('16.5 cm (Chuẩn 115/75mm)', this)">16.5 cm (Chuẩn)</div>
-            <div class="size-pill" onclick="setWristSize('18.0 cm (Lớn 125/80mm)', this)">18 cm (Lớn)</div>
-          </div>
-        </div>
-
-        <!-- Step 5: Khắc Tên Laser -->
-        <div class="step-section" style="border-bottom: none;">
-          <div class="step-header">
-            <span class="step-title"><span class="step-num">5</span> Cá Nhân Hóa (Khắc Tên Laser)</span>
-            <span class="step-selected-val">Miễn phí</span>
-          </div>
-          <div class="engrave-input-wrap">
-            <input type="text" id="engrave-text" class="engrave-input" placeholder="NHẬP TÊN HOẶC NGÀY SINH (VD: TUAN ANH)" maxlength="16" oninput="updateEngraving(this.value)">
-          </div>
-          <p class="engrave-hint">Chữ sẽ được khắc dập chìm laser tinh xảo lên mặt lót Zermatt bên trong dây.</p>
-        </div>
-
-      </div>
-
-      <!-- Action Footer -->
-      <div class="config-footer">
-        <div class="price-row">
-          <div>
-            <span class="price-label">Tổng Chi Phí May Đo</span>
-            <div style="font-size: 10px; color: #16a34a; font-weight: 600; margin-top: 2px;">✔ Bảo hành da & chỉ 12 tháng</div>
-          </div>
-          <span class="price-amount" id="total-price">600.000₫</span>
-        </div>
-        <div class="action-btn-row">
-          <button class="btn-secondary" onclick="captureSnapshot()">
-            📸 Lưu Ảnh Phối
-          </button>
-          <button class="btn-primary" onclick="openCheckoutModal()">
-            ✨ ĐẶT MAY THỦ CÔNG
-          </button>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Modal Đặt Hàng -->
-  <div class="modal-backdrop" id="checkout-modal">
-    <div class="modal-box">
-      <button class="modal-close" onclick="closeCheckoutModal()">✕</button>
-      <h3 class="modal-title">Xác Nhận Đặt May Dây Da Percent</h3>
-      <p class="modal-desc">Đơn hàng may đo thủ công được chuyển thẳng về xưởng chế tác 18 bước của Percent. Nghệ nhân sẽ may đo theo đúng thông số 3D bạn vừa phối.</p>
-      
-      <div class="summary-card" id="summary-content">
-        <!-- JS fill -->
-      </div>
-
-      <div style="display: flex; gap: 10px;">
-        <button class="btn-primary" style="flex: 1;" onclick="sendOrderZalo()">
-          💬 Gửi Đơn Qua Zalo Xưởng
-        </button>
-        <button class="btn-secondary" style="flex: 1;" onclick="sendOrderShopDongHo()">
-          🛒 Thêm Vào Giỏ Hàng
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 3D Engine Script -->
   <script>
     // --- DATABASE SẢN PHẨM PERCENT CÓ SẴN (TEXTURE & NORMAL MAP TỰ ĐỘNG BÓC TÁCH TỪ ẢNH THẬT) ---
     const LEATHER_CATALOG = [
@@ -821,9 +25,10 @@
     ];
 
     const WATCH_FACES = [
-      { id: 'classic_rolex', name: 'Đồng Hồ Classic Rolex', img: 'img/face_rolex.png' },
-      { id: 'smart_apple', name: 'Đồng Hồ Apple Watch', img: 'img/face_apple.png' },
-      { id: 'smart_round', name: 'Đồng Hồ Smart Round', img: 'img/face_smart.png' }
+      { id: 'apple', name: 'Apple Watch Ultra', file: 'models/apple_watch_ultra_2.glb', scale: 0.5, px: 0, py: 0, pz: 0, rx: 0, ry: 0, rz: 0 },
+      { id: 'rolex', name: 'Rolex', file: 'models/rolex.glb', scale: 1.5, px: 0, py: 0, pz: 0.5, rx: 0, ry: 0, rz: 0 },
+      { id: 'ugia', name: 'Ugia Watch', file: 'models/ugia_watch.glb', scale: 0.05, px: 0, py: 0, pz: 0.5, rx: Math.PI/2, ry: 0, rz: 0 },
+      { id: 'chronograph', name: 'Chronograph (Khronos)', file: 'models/ChronographWatch.glb', scale: 0.25, px: 0, py: 0, pz: 0.5, rx: Math.PI/2, ry: 0, rz: 0 }
     ];
 
     // Trạng thái cấu hình hiện tại
@@ -860,6 +65,57 @@
     const dracoLoader = new THREE.DRACOLoader();
     dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/');
     gltfLoader.setDRACOLoader(dracoLoader);
+
+    
+    // --- TẠO MẶT SỐ BẰNG CANVAS ---
+    function createDialTexture(color, style) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+        
+        // Nền
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, 512, 512);
+        
+        ctx.translate(256, 256);
+        
+        // Vạch số
+        ctx.fillStyle = (color === '#ffffff' || color === '#f5f5f5') ? '#333' : '#fff';
+        for(let i=0; i<12; i++) {
+            ctx.save();
+            ctx.rotate((i * 30 * Math.PI) / 180);
+            if (style === 'Roman') {
+                const numerals = ['XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
+                ctx.font = 'bold 40px serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(numerals[i], 0, -190);
+            } else if (style === 'Minimal') {
+                ctx.fillRect(-2, -220, 4, 30);
+            } else {
+                ctx.fillRect(-4, -220, 8, 40);
+            }
+            ctx.restore();
+        }
+        
+        // Logo
+        ctx.font = 'bold 30px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('PERCENT', 0, -80);
+        ctx.font = '16px sans-serif';
+        ctx.fillText('AUTOMATIC', 0, 100);
+        
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.anisotropy = 16;
+        return tex;
+    }
+
+    const dialTextures = {
+        white_classic: createDialTexture('#f5f5f5', 'Classic'),
+        black_minimal: createDialTexture('#222222', 'Minimal'),
+        blue_roman: createDialTexture('#1a365d', 'Roman')
+    };
 
     function init3D() {
       const container = document.querySelector('.viewport-container');
@@ -926,7 +182,29 @@
       scene.add(strapGroup);
 
       // Tải mô hình dây da
+      
+      // Dựng dây da 3D bằng mã (Procedural Strap) thay vì dùng mô hình Handdn
       buildWatchAndStrap();
+
+                      child.material = newMat;
+                      strapMaterials.push(newMat);
+                  } else if (mName.includes('stitch')) {
+                      const newMat = new THREE.MeshStandardMaterial({ roughness: 0.9, metalness: 0, color: 0xe8ddc5 });
+                      child.material = newMat;
+                      stitchMaterials.push(newMat);
+                  } else if (mName.includes('buckle') || mName.includes('wire')) {
+                      const newMat = new THREE.MeshStandardMaterial({ roughness: 0.2, metalness: 1.0, color: 0xeeeeee });
+                      child.material = newMat;
+                      hardwareMaterials.push(newMat);
+                  }
+              }
+          });
+
+          update3D();
+          if(currentConfig.showWatch) {
+              loadWatchFace(currentConfig.watchFace);
+          }
+      });
 
       // Render loop
       animate();
@@ -1182,13 +460,38 @@
       watchGroup.add(watchCase);
 
       // Mặt Dial tròn đen sang trọng
-      const dialGeo = new THREE.CircleGeometry(3.1, 48);
-      const dialMat = new THREE.MeshStandardMaterial({ color: 0x121212, roughness: 0.3 });
-      const dial = new THREE.Mesh(dialGeo, dialMat);
+      
+      watchDialMaterial = new THREE.MeshPhysicalMaterial({ 
+          color: 0xffffff,
+          metalness: 0.1,
+          roughness: 0.8,
+          map: dialTextures.white_classic
+      });
+
+      // Vỏ tròn
+      const caseGeo = new THREE.CylinderGeometry(3.6, 3.6, 0.9, 48);
+      const watchCase = new THREE.Mesh(caseGeo, caseMetalMat);
+      watchCase.rotation.x = Math.PI / 2;
+      watchCase.castShadow = true;
+      watchGroup.add(watchCase);
+
+      // Mặt Dial
+      const dialGeo = new THREE.CircleGeometry(3.3, 48);
+      const dial = new THREE.Mesh(dialGeo, watchDialMaterial);
       dial.position.z = 0.46;
       watchGroup.add(dial);
+      
+      // Mặt kính (Kính lồi)
+      const glassGeo = new THREE.CylinderGeometry(3.3, 3.3, 0.1, 48);
+      const glassMat = new THREE.MeshPhysicalMaterial({
+          color: 0xffffff, transmission: 0.95, opacity: 1, transparent: true, roughness: 0, ior: 1.5
+      });
+      const glass = new THREE.Mesh(glassGeo, glassMat);
+      glass.rotation.x = Math.PI / 2;
+      glass.position.z = 0.55;
+      watchGroup.add(glass);
 
-      // 4 chân Càng Lug giữ dây
+      // 4 chân Càng Lug
       for (let side of [-1, 1]) {
         for (let end of [-1, 1]) {
           const lugGeo = new THREE.BoxGeometry(0.3, 0.45, 1.1);
@@ -1233,73 +536,36 @@
     }
 
 
-    
-    let watchDialMaterial = null;
-    function buildWatchCase() {
-        if(watchGroup) {
-            scene.remove(watchGroup);
-        }
-        watchGroup = new THREE.Group();
-        watchGroup.position.set(0, 0, 0.4); 
-        watchGroup.rotation.z = -Math.PI / 2;
-
-        const caseMetalMat = new THREE.MeshStandardMaterial({
-            color: 0xffffff, metalness: 1.0, roughness: 0.1
-        });
-
-        watchDialMaterial = new THREE.MeshPhysicalMaterial({ 
-            color: 0xffffff, metalness: 0.1, roughness: 0.5
-        });
-
-        // Vỏ tròn
-        const caseGeo = new THREE.CylinderGeometry(3.6, 3.6, 0.9, 48);
-        const watchCase = new THREE.Mesh(caseGeo, caseMetalMat);
-        watchCase.rotation.x = Math.PI / 2;
-        watchCase.castShadow = true;
-        watchGroup.add(watchCase);
-
-        // Mặt Dial
-        const dialGeo = new THREE.CircleGeometry(3.3, 48);
-        const dial = new THREE.Mesh(dialGeo, watchDialMaterial);
-        dial.position.z = 0.46;
-        watchGroup.add(dial);
-        
-        // Mặt kính (Kính lồi)
-        const glassGeo = new THREE.CylinderGeometry(3.3, 3.3, 0.1, 48);
-        const glassMat = new THREE.MeshPhysicalMaterial({
-            color: 0xffffff, transmission: 0.95, opacity: 1, transparent: true, roughness: 0, ior: 1.5
-        });
-        const glass = new THREE.Mesh(glassGeo, glassMat);
-        glass.rotation.x = Math.PI / 2;
-        glass.position.z = 0.55;
-        watchGroup.add(glass);
-
-        // 4 chân Càng Lug
-        for (let side of [-1, 1]) {
-            for (let end of [-1, 1]) {
-                const lugGeo = new THREE.BoxGeometry(0.3, 0.45, 1.1);
-                const lug = new THREE.Mesh(lugGeo, caseMetalMat);
-                lug.position.set(side * 1.15, 0, end * 3.7);
-                watchGroup.add(lug);
-            }
-        }
-        scene.add(watchGroup);
-        watchGroup.visible = currentConfig.showWatch;
-    }
-
     function loadWatchFace(faceConfig) {
-        if (!faceConfig || !currentConfig.showWatch) return;
-        if (!watchGroup) buildWatchCase();
+        if(watchGroup) watchGroup.visible = false;
+        if(!faceConfig || !currentConfig.showWatch) return;
         
-        watchGroup.visible = true;
-        textureLoader.load(faceConfig.img, (tex) => {
-            tex.colorSpace = THREE.SRGBColorSpace;
-            tex.center.set(0.5, 0.5);
-            watchDialMaterial.map = tex;
-            watchDialMaterial.needsUpdate = true;
+        if(loadedWatches[faceConfig.id]) {
+            watchGroup = loadedWatches[faceConfig.id];
+            watchGroup.visible = true;
+            return;
+        }
+        
+        gltfLoader.load(faceConfig.file, (gltf) => {
+            const watchModel = gltf.scene;
+            const box = new THREE.Box3().setFromObject(watchModel);
+            const center = box.getCenter(new THREE.Vector3());
+            watchModel.position.sub(center);
+            
+            watchModel.scale.set(faceConfig.scale, faceConfig.scale, faceConfig.scale);
+            watchModel.position.set(faceConfig.px, faceConfig.py, faceConfig.pz);
+            watchModel.rotation.set(faceConfig.rx, faceConfig.ry, faceConfig.rz);
+            
+            const group = new THREE.Group();
+            group.add(watchModel);
+            group.position.set(0, 0, 0.4); 
+            group.rotation.z = -Math.PI / 2;
+            
+            scene.add(group);
+            loadedWatches[faceConfig.id] = group;
+            watchGroup = group;
         });
     }
-
 
     function update3D() {
         if (!strapModel) return;
@@ -1613,5 +879,3 @@ Nhờ xưởng tư vấn và chế tác giúp tôi!`;
       updatePrice();
     });
   </script>
-</body>
-</html>
