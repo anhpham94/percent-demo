@@ -883,7 +883,7 @@
       pmremGenerator.compileEquirectangularShader();
       new THREE.RGBELoader()
         .setDataType(THREE.UnsignedByteType)
-        .load('https://raw.githubusercontent.com/mrdoob/three.js/r128/examples/textures/equirectangular/royal_esplanade_1k.hdr', function (texture) {
+        .load('https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/royal_esplanade_1k.hdr', function (texture) {
           const envMap = pmremGenerator.fromEquirectangular(texture).texture;
           scene.environment = envMap;
           texture.dispose();
@@ -976,8 +976,15 @@
       strapGroup = new THREE.Group();
       scene.add(strapGroup);
 
+      // Khởi tạo danh sách material để update sau này
+      strapMaterials = [];
+      stitchMaterials = [];
+      hardwareMaterials = [];
+      stitchMeshes = [];
+
       // Tạo vật liệu da ban đầu
       const leatherMaterial = createLeatherMaterial(currentConfig.leather);
+      strapMaterials.push(leatherMaterial);
 
       // 1. DÂY NGẮN (Short Strap - Buckle Side)
       const shortCurve = new THREE.CubicBezierCurve3(
@@ -1093,6 +1100,7 @@
         roughness: 0.8,
         metalness: 0.05
       });
+      stitchMaterials.push(stitchMat);
 
       function addStitchLine(curve, sideOffset, widthStart, widthEnd) {
         const count = 28;
@@ -1131,6 +1139,7 @@
         metalness: currentConfig.buckleMetal.metalness,
         roughness: currentConfig.buckleMetal.roughness
       });
+      hardwareMaterials.push(metalMat);
 
       // 1. Khung khóa chữ U
       const frameGeo = new THREE.TorusGeometry(0.95, 0.09, 12, 24, Math.PI);
@@ -1154,6 +1163,8 @@
 
       // 2. Hai con đỉa da (Fixed & Floating Keepers)
       const keeperMat = createLeatherMaterial(currentConfig.leather);
+      strapMaterials.push(keeperMat);
+      
       const keeperGeo = new THREE.TorusGeometry(1.05, 0.12, 8, 20);
 
       const fixedKeeper = new THREE.Mesh(keeperGeo, keeperMat);
@@ -1175,42 +1186,7 @@
       group.add(buckleGroup);
     }
 
-    // Dựng Mặt Đồng Hồ Mẫu (Watch Case 40mm)
-    function buildWatchCase() {
-      watchGroup = new THREE.Group();
 
-      const caseMetalMat = new THREE.MeshStandardMaterial({
-        color: 0xE0E0E0,
-        metalness: 0.95,
-        roughness: 0.18
-      });
-
-      // Vỏ tròn
-      const caseGeo = new THREE.CylinderGeometry(3.6, 3.6, 0.9, 48);
-      const watchCase = new THREE.Mesh(caseGeo, caseMetalMat);
-      watchCase.rotation.x = Math.PI / 2;
-      watchCase.castShadow = true;
-      watchGroup.add(watchCase);
-
-      // Mặt Dial tròn đen sang trọng
-      const dialGeo = new THREE.CircleGeometry(3.1, 48);
-      const dialMat = new THREE.MeshStandardMaterial({ color: 0x121212, roughness: 0.3 });
-      const dial = new THREE.Mesh(dialGeo, dialMat);
-      dial.position.z = 0.46;
-      watchGroup.add(dial);
-
-      // 4 chân Càng Lug giữ dây
-      for (let side of [-1, 1]) {
-        for (let end of [-1, 1]) {
-          const lugGeo = new THREE.BoxGeometry(0.3, 0.45, 1.1);
-          const lug = new THREE.Mesh(lugGeo, caseMetalMat);
-          lug.position.set(side * 1.15, 0, end * 3.7);
-          watchGroup.add(lug);
-        }
-      }
-
-      scene.add(watchGroup);
-    }
 
     // Lấy map để load roughness
     const leatherRoughnessMaps = {};
@@ -1325,7 +1301,7 @@
 
 
     function update3D() {
-        if (!strapModel) return;
+        if (!strapGroup || strapGroup.children.length === 0) return;
 
         const tex = textureLoader.load(currentConfig.leather.tex || currentConfig.leather.img);
         const norm = currentConfig.leather.norm ? textureLoader.load(currentConfig.leather.norm) : null;
@@ -1369,7 +1345,7 @@
     }
 
     function updateStitch() {
-        if (!strapModel) return;
+        if (!strapGroup || strapGroup.children.length === 0) return;
         const sColor = currentConfig.stitch.id === 'matching' ? currentLeatherColor : new THREE.Color(currentConfig.stitch.hex);
         stitchMaterials.forEach(m => {
             m.color = sColor;
