@@ -1,24 +1,16 @@
 from playwright.sync_api import sync_playwright
+import time
 
 def run():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        
-        errors = []
-        page.on("pageerror", lambda err: errors.append(f"PageError: {err}"))
-        page.on("console", lambda msg: errors.append(f"Console {msg.type}: {msg.text}") if msg.type == 'error' else None)
-        
-        print("Navigating to live site...")
+        page.on("console", lambda msg: print(f"CONSOLE: {msg.type}: {msg.text}"))
+        page.on("pageerror", lambda err: print(f"ERROR: {err}"))
+        print("Navigating...")
         page.goto('https://anhpham94.github.io/percent-demo/3d.html', wait_until='networkidle')
-        
-        if errors:
-            print("ERRORS FOUND:")
-            for e in errors:
-                print(e)
-        else:
-            print("NO CONSOLE ERRORS.")
-            
+        time.sleep(3)
+        page.screenshot(path='error_screenshot.png')
         browser.close()
 
 run()
