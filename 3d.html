@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Percent 3D Bespoke Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <style>
+        :root {
+            --bg-color: #F6F0E5;
+            --text-main: #241813;
+            --accent: #9C5A2C;
+            --border: #E8DFD0;
+            --white: #FFFFFF;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Be Vietnam Pro', sans-serif; }
+        body { display: flex; height: 100vh; overflow: hidden; background: var(--bg-color); color: var(--text-main); }
+        
+        #canvas-container { flex: 1; position: relative; }
+        
+        #sidebar {
+            width: 400px; background: var(--white); border-left: 1px solid var(--border);
+            display: flex; flex-direction: column; z-index: 10;
+        }
+        .header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 15px; }
+        .logo { font-size: 24px; font-weight: 700; background: var(--text-main); color: var(--white); padding: 5px 10px; border-radius: 4px; }
+        .title h1 { font-size: 16px; font-weight: 700; letter-spacing: 1px; }
+        .title p { font-size: 12px; color: #666; font-style: italic; }
+        
+        .options-container { flex: 1; overflow-y: auto; padding: 20px; }
+        .step { margin-bottom: 30px; }
+        .step h3 { font-size: 13px; font-weight: 700; margin-bottom: 15px; text-transform: uppercase; display: flex; justify-content: space-between; }
+        .step h3 span { color: var(--accent); font-weight: 600; text-transform: none; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        
+        .card { 
+            border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center;
+            cursor: pointer; transition: all 0.2s ease; background: #fff;
+        }
+        .card:hover { border-color: var(--accent); }
+        .card.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+        
+        .swatch-img { width: 100%; height: 80px; object-fit: cover; border-radius: 4px; margin-bottom: 8px; background: #f0f0f0; }
+        .color-dot { width: 30px; height: 30px; border-radius: 50%; margin: 0 auto 8px auto; border: 1px solid #ddd; }
+        
+        .card-title { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+        .card-price { font-size: 11px; color: var(--accent); }
+        
+        .footer { padding: 20px; border-top: 1px solid var(--border); background: var(--white); }
+        .total-price { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .total-price span:first-child { font-size: 14px; font-weight: 600; }
+        .total-price span:last-child { font-size: 24px; font-weight: 700; color: var(--text-main); }
+        .btn-order { width: 100%; background: var(--text-main); color: var(--white); border: none; padding: 15px; font-size: 14px; font-weight: 700; border-radius: 8px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .btn-order:hover { background: #000; }
+        
+        /* Camera Controls */
+        .camera-controls { position: absolute; top: 20px; left: 20px; display: flex; gap: 10px; z-index: 5; }
+        .btn-cam { background: var(--white); border: 1px solid var(--border); padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 5px; }
+        .btn-cam.active { background: var(--text-main); color: var(--white); border-color: var(--text-main); }
+        
+        .watch-toggle { position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; z-index: 5; }
+        
+        #loading { position: absolute; inset: 0; background: var(--bg-color); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; transition: opacity 0.5s; }
+        .spinner { width: 40px; height: 40px; border: 3px solid rgba(0,0,0,0.1); border-top-color: var(--text-main); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            #sidebar { width: 100%; height: 50vh; border-left: none; border-top: 1px solid var(--border); }
+            #canvas-container { height: 50vh; }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <div class="spinner"></div>
+        <div id="loading-text" style="font-weight:600;">Đang nạp 3D Studio... 0%</div>
+    </div>
+
+    <div id="canvas-container">
+        <div class="camera-controls">
+            <button class="btn-cam active" onclick="setCamera('front')">🚀 Toàn cảnh</button>
+            <button class="btn-cam" onclick="setCamera('top')">⬆️ Chụp thẳng</button>
+            <button class="btn-cam" onclick="setCamera('side')">🔍 Xem độn phồng</button>
+        </div>
+        <div class="watch-toggle">
+            <button class="btn-cam active" id="btn-watch" onclick="toggleWatch()">⌚ Mặt đồng hồ: BẬT</button>
+        </div>
+    </div>
+
+    <div id="sidebar">
+        <div class="header">
+            <div class="logo">%</div>
+            <div class="title">
+                <h1>PERCENT BESPOKE</h1>
+                <p>Mô Phỏng 3D Khớp Khối Chuẩn Xác</p>
+            </div>
+        </div>
+        
+        <div class="options-container">
+            <!-- BƯỚC 1: MÀU DA -->
+            <div class="step">
+                <h3 id="lbl-leather">1. CHẤT LIỆU & MÀU DA <span>Agon Soil</span></h3>
+                <div class="grid-2" id="leather-grid"></div>
+            </div>
+            
+            <!-- BƯỚC 2: CHỈ MAY -->
+            <div class="step">
+                <h3 id="lbl-stitch">2. CHỈ MAY SADDLE STITCH <span>Tiệp màu</span></h3>
+                <div class="grid-4" id="stitch-grid"></div>
+            </div>
+            
+            <!-- BƯỚC 3: MÀU KHÓA -->
+            <div class="step">
+                <h3 id="lbl-hardware">3. KHÓA KIM LOẠI <span>Bạc Inox</span></h3>
+                <div class="grid-4" id="hardware-grid"></div>
+            </div>
+            
+            <!-- BƯỚC 4: ĐỒNG HỒ ƯỚM THỬ -->
+            <div class="step" id="watch-options">
+                <h3 id="lbl-watchcase">4. VỎ ĐỒNG HỒ ƯỚM THỬ <span>Vỏ Thép Bạc</span></h3>
+                <div class="grid-3" id="watchcase-grid"></div>
+                <h3 id="lbl-watchdial" style="margin-top: 15px;">MẶT SỐ ĐỒNG HỒ <span>Trắng Thanh Lịch</span></h3>
+                <div class="grid-3" id="watchdial-grid"></div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <div class="total-price">
+                <span>TỔNG CHI PHÍ</span>
+                <span id="price-display">650.000₫</span>
+            </div>
+            <button class="btn-order" onclick="alert('Tính năng đặt hàng sẽ kết nối trực tiếp với Zalo/WooCommerce!')">✨ ĐẶT MAY THỦ CÔNG</button>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA CONFIG ---
+        const leathers = [
+            { id: 'agon', name: 'Agon', desc: 'Nâu đất Soil', price: 650000, tex: 'img/tex_p01.jpg', norm: 'img/norm_p01.jpg' },
+            { id: 'karl', name: 'Karl', desc: 'Nâu Sepia', price: 650000, tex: 'img/tex_p04.jpg', norm: 'img/norm_p04.jpg' },
+            { id: 'bruno', name: 'Bruno', desc: 'Vàng bò Gold', price: 650000, tex: 'img/tex_p05.jpg', norm: 'img/norm_p05.jpg' },
+            { id: 'cosimo', name: 'Cosimo', desc: 'Xanh Navy Ý', price: 650000, tex: 'img/tex_p08.jpg', norm: 'img/norm_p08.jpg' },
+            { id: 'matteo', name: 'Matteo', desc: 'Đỏ rượu Wine', price: 650000, tex: 'img/tex_p10.jpg', norm: 'img/norm_p10.jpg' },
+            { id: 'knut', name: 'Knut', desc: 'Đen Cổ Điển', price: 650000, tex: 'img/tex_p03.jpg', norm: 'img/norm_p03.jpg' }
+        ];
+
+        const stitches = [
+            { id: 'tiep', name: 'Tiệp màu da', color: 'match' },
+            { id: 'trang', name: 'Trắng tinh', color: '#ffffff' },
+            { id: 'kem', name: 'Kem Vintage', color: '#e8ddc5' },
+            { id: 'den', name: 'Đen Tuyền', color: '#111111' },
+            { id: 'vang', name: 'Vàng Hermes', color: '#dca654' },
+            { id: 'do', name: 'Đỏ Cherry', color: '#b01c1c' }
+        ];
+
+        const hardwares = [
+            { id: 'silver', name: 'Bạc Inox', color: '#eeeeee', metal: 1, rough: 0.2 },
+            { id: 'gold', name: 'Vàng Gold', color: '#d4af37', metal: 1, rough: 0.2 },
+            { id: 'rose', name: 'Vàng Hồng', color: '#b76e79', metal: 1, rough: 0.2 },
+            { id: 'black', name: 'Đen PVD', color: '#222222', metal: 0.8, rough: 0.4 }
+        ];
+        
+        const watchCases = [
+            { id: 'w_silver', name: 'Vỏ Thép Bạc', color: '#e0e0e0', metal: 1, rough: 0.1 },
+            { id: 'w_gold', name: 'Vỏ Vàng', color: '#d4af37', metal: 1, rough: 0.15 },
+            { id: 'w_black', name: 'Vỏ Đen Nhám', color: '#1a1a1a', metal: 0.7, rough: 0.5 }
+        ];
+        
+        const watchDials = [
+            { id: 'd_white', name: 'Trắng', color: '#f5f5f5' },
+            { id: 'd_black', name: 'Đen', color: '#111111' },
+            { id: 'd_navy', name: 'Xanh Navy', color: '#1a2b4c' }
+        ];
+
+        let state = {
+            leather: leathers[0],
+            stitch: stitches[0],
+            hardware: hardwares[0],
+            watchCase: watchCases[0],
+            watchDial: watchDials[0],
+            showWatch: true
+        };
+
+        // --- UI RENDER ---
+        function renderUI() {
+            const lGrid = document.getElementById('leather-grid');
+            lGrid.innerHTML = leathers.map(l => `
+                <div class="card ${state.leather.id === l.id ? 'active' : ''}" onclick="selectLeather('${l.id}')">
+                    <img src="${l.tex}" class="swatch-img">
+                    <div class="card-title">${l.name}</div>
+                    <div class="card-price">${l.desc}</div>
+                </div>
+            `).join('');
+
+            const sGrid = document.getElementById('stitch-grid');
+            sGrid.innerHTML = stitches.map(s => `
+                <div class="card ${state.stitch.id === s.id ? 'active' : ''}" onclick="selectStitch('${s.id}')">
+                    <div class="color-dot" style="background: ${s.color === 'match' ? 'linear-gradient(135deg, #444, #999)' : s.color}"></div>
+                    <div class="card-title">${s.name}</div>
+                </div>
+            `).join('');
+
+            const hGrid = document.getElementById('hardware-grid');
+            hGrid.innerHTML = hardwares.map(h => `
+                <div class="card ${state.hardware.id === h.id ? 'active' : ''}" onclick="selectHardware('${h.id}')">
+                    <div class="color-dot" style="background: ${h.color}"></div>
+                    <div class="card-title">${h.name}</div>
+                </div>
+            `).join('');
+            
+            const wcGrid = document.getElementById('watchcase-grid');
+            wcGrid.innerHTML = watchCases.map(c => `
+                <div class="card ${state.watchCase.id === c.id ? 'active' : ''}" onclick="selectWatchCase('${c.id}')">
+                    <div class="color-dot" style="background: ${c.color}"></div>
+                    <div class="card-title">${c.name}</div>
+                </div>
+            `).join('');
+            
+            const wdGrid = document.getElementById('watchdial-grid');
+            wdGrid.innerHTML = watchDials.map(d => `
+                <div class="card ${state.watchDial.id === d.id ? 'active' : ''}" onclick="selectWatchDial('${d.id}')">
+                    <div class="color-dot" style="background: ${d.color}"></div>
+                    <div class="card-title">${d.name}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('lbl-leather').innerHTML = `1. CHẤT LIỆU & MÀU DA <span>${state.leather.name} (${state.leather.desc})</span>`;
+            document.getElementById('lbl-stitch').innerHTML = `2. CHỈ MAY SADDLE STITCH <span>${state.stitch.name}</span>`;
+            document.getElementById('lbl-hardware').innerHTML = `3. KHÓA KIM LOẠI <span>${state.hardware.name}</span>`;
+            document.getElementById('lbl-watchcase').innerHTML = `4. VỎ ĐỒNG HỒ ƯỚM THỬ <span>${state.watchCase.name}</span>`;
+            document.getElementById('lbl-watchdial').innerHTML = `MẶT SỐ ĐỒNG HỒ <span>${state.watchDial.name}</span>`;
+
+            document.getElementById('price-display').innerText = state.leather.price.toLocaleString('vi-VN') + '₫';
+        }
+
+        // --- 3D ENGINE ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xF6F0E5);
+
+        // Env map for realistic metals & leather reflections
+        const pmremGenerator = new THREE.PMREMGenerator(new THREE.WebGLRenderer());
+        pmremGenerator.compileEquirectangularShader();
+        // Since we don't have a real EXR/HDR, we create a pseudo studio environment via directional lights and ambient
+
+        const camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 100);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 15;
+        controls.minDistance = 2;
+
+        // Lighting Studio Setup
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        dirLight.position.set(5, 8, 5);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.near = 0.5;
+        dirLight.shadow.camera.far = 25;
+        dirLight.shadow.camera.left = -5;
+        dirLight.shadow.camera.right = 5;
+        dirLight.shadow.camera.top = 5;
+        dirLight.shadow.camera.bottom = -5;
+        dirLight.shadow.bias = -0.001;
+        scene.add(dirLight);
+
+        const fillLight = new THREE.DirectionalLight(0xd4c5b9, 0.8);
+        fillLight.position.set(-5, 3, -5);
+        scene.add(fillLight);
+        
+        const rimLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        rimLight.position.set(0, 5, -8);
+        scene.add(rimLight);
+
+        // Global objects
+        let strapModel = null;
+        let watchGroup = null;
+        let strapMaterials = [];
+        let stitchMaterials = [];
+        let hardwareMaterials = [];
+        
+        let watchCaseMaterial = null;
+        let watchDialMaterial = null;
+
+        const textureLoader = new THREE.TextureLoader();
+        let currentLeatherColor = new THREE.Color();
+
+        // CÁC HÀM XỬ LÝ 3D
+        function init3D() {
+            const loader = new THREE.GLTFLoader();
+            loader.load('models/classic.glb', (gltf) => {
+                strapModel = gltf.scene;
+                
+                // Chuẩn hóa vị trí model gốc
+                const box = new THREE.Box3().setFromObject(strapModel);
+                const center = box.getCenter(new THREE.Vector3());
+                strapModel.position.sub(center); 
+                // Xoay cho dây nằm ngang ra dễ nhìn
+                strapModel.rotation.z = Math.PI / 2;
+                strapModel.rotation.y = Math.PI; // Ngửa lên
+                
+                scene.add(strapModel);
+
+                // Phân loại Mesh
+                strapModel.traverse((child) => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                        
+                        const mName = child.name.toLowerCase();
+                        
+                        // Mesh da
+                        if (mName.includes('leather') || mName.includes('padded') || mName.includes('tip') || mName.includes('keeper')) {
+                            // Tạo material riêng để update texture
+                            const newMat = new THREE.MeshStandardMaterial({
+                                roughness: 0.65,
+                                metalness: 0.05,
+                                color: 0xffffff
+                            });
+                            child.material = newMat;
+                            strapMaterials.push(newMat);
+                        }
+                        // Mesh chỉ may
+                        else if (mName.includes('stitch')) {
+                            const newMat = new THREE.MeshStandardMaterial({
+                                roughness: 0.9,
+                                metalness: 0,
+                                color: 0xe8ddc5
+                            });
+                            child.material = newMat;
+                            stitchMaterials.push(newMat);
+                        }
+                        // Mesh phần cứng (khóa)
+                        else if (mName.includes('buckle') || mName.includes('wire')) {
+                            const newMat = new THREE.MeshStandardMaterial({
+                                roughness: 0.2,
+                                metalness: 1.0,
+                                color: 0xeeeeee
+                            });
+                            child.material = newMat;
+                            hardwareMaterials.push(newMat);
+                        }
+                    }
+                });
+                
+                // Dựng mô hình mặt đồng hồ thủ công cực nét (Procedural Watch Case)
+                createProceduralWatch();
+
+                document.getElementById('loading').style.opacity = '0';
+                setTimeout(() => document.getElementById('loading').style.display = 'none', 500);
+
+                setCamera('front');
+                update3D();
+
+            }, (xhr) => {
+                document.getElementById('loading-text').innerText = 'Đang nạp 3D Studio... ' + Math.round(xhr.loaded / xhr.total * 100) + '%';
+            }, (err) => {
+                document.getElementById('loading-text').innerHTML = '<span style="color:red">Lỗi tải mô hình 3D</span>';
+            });
+        }
+        
+        function createProceduralWatch() {
+            watchGroup = new THREE.Group();
+            
+            // Thông số mặt đồng hồ 40mm
+            const caseRadius = 2.0; 
+            const caseHeight = 0.5;
+            
+            watchCaseMaterial = new THREE.MeshStandardMaterial({
+                color: 0xe0e0e0,
+                metalness: 1.0,
+                roughness: 0.1
+            });
+            
+            watchDialMaterial = new THREE.MeshStandardMaterial({
+                color: 0xf5f5f5,
+                metalness: 0.1,
+                roughness: 0.8
+            });
+
+            // Vỏ thép (Cylinder)
+            const caseGeo = new THREE.CylinderGeometry(caseRadius, caseRadius * 0.95, caseHeight, 64);
+            const caseMesh = new THREE.Mesh(caseGeo, watchCaseMaterial);
+            caseMesh.castShadow = true;
+            caseMesh.receiveShadow = true;
+            caseMesh.rotation.x = Math.PI / 2; // Nằm phẳng
+            watchGroup.add(caseMesh);
+            
+            // Mặt kính (Mặt phẳng lồi nhẹ)
+            const glassGeo = new THREE.CylinderGeometry(caseRadius*0.9, caseRadius*0.9, 0.05, 64);
+            const glassMat = new THREE.MeshPhysicalMaterial({
+                color: 0xffffff, transmission: 0.9, opacity: 1, transparent: true,
+                roughness: 0, ior: 1.5, thickness: 0.1
+            });
+            const glassMesh = new THREE.Mesh(glassGeo, glassMat);
+            glassMesh.position.z = caseHeight/2 + 0.025;
+            glassMesh.rotation.x = Math.PI / 2;
+            watchGroup.add(glassMesh);
+
+            // Mặt dial
+            const dialGeo = new THREE.CylinderGeometry(caseRadius*0.9, caseRadius*0.9, 0.01, 64);
+            const dialMesh = new THREE.Mesh(dialGeo, watchDialMaterial);
+            dialMesh.position.z = caseHeight/2 - 0.1;
+            dialMesh.rotation.x = Math.PI / 2;
+            watchGroup.add(dialMesh);
+            
+            // Cọc số vạch (Indices)
+            const indexMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.8, roughness: 0.2 });
+            for(let i = 0; i < 12; i++) {
+                const angle = (i / 12) * Math.PI * 2;
+                const isMain = i % 3 === 0;
+                const idxGeo = new THREE.BoxGeometry(0.05, isMain ? 0.4 : 0.2, 0.02);
+                const idxMesh = new THREE.Mesh(idxGeo, indexMat);
+                idxMesh.position.set(Math.sin(angle) * (caseRadius * 0.75), Math.cos(angle) * (caseRadius * 0.75), caseHeight/2 - 0.08);
+                idxMesh.rotation.z = -angle;
+                watchGroup.add(idxMesh);
+            }
+            
+            // Kim giờ & Phút (Hands)
+            const handMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.5, roughness: 0.4 });
+            const hourHand = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.8, 0.02), handMat);
+            hourHand.position.set(0, 0.3, caseHeight/2 - 0.05);
+            hourHand.rotation.z = Math.PI / 4;
+            
+            const minHand = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.2, 0.02), handMat);
+            minHand.position.set(-0.4, 0.4, caseHeight/2 - 0.03);
+            minHand.rotation.z = -Math.PI / 6;
+            
+            // Tâm kim (Pinion)
+            const pinion = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.06, 16), handMat);
+            pinion.position.set(0, 0, caseHeight/2 - 0.05);
+            pinion.rotation.x = Math.PI / 2;
+            
+            watchGroup.add(hourHand);
+            watchGroup.add(minHand);
+            watchGroup.add(pinion);
+            
+            // 2 cặp Lugs (Càng nối dây)
+            const lugGeo = new THREE.BoxGeometry(0.3, 0.8, 0.4);
+            const lugPositions = [
+                [1.2, 1.8], [-1.2, 1.8], [1.2, -1.8], [-1.2, -1.8]
+            ];
+            lugPositions.forEach(pos => {
+                const lug = new THREE.Mesh(lugGeo, watchCaseMaterial);
+                lug.position.set(pos[0], pos[1], 0);
+                lug.castShadow = true;
+                watchGroup.add(lug);
+            });
+
+            // Đặt vị trí watchGroup vào chính giữa dây (đầu Lugs nối vào mép dây)
+            // Trong mô hình Handdn Classic.glb gốc, phần gốc dây (lug end) nằm ở toạ độ x=0, tỏa ra 2 hướng.
+            watchGroup.position.set(0, 0, 0); 
+            // Xoay cho đúng chiều dọc dây
+            watchGroup.rotation.z = -Math.PI / 2;
+            
+            scene.add(watchGroup);
+        }
+
+        function update3D() {
+            if (!strapModel) return;
+
+            // 1. Cập nhật Da
+            const tex = textureLoader.load(state.leather.tex);
+            const norm = textureLoader.load(state.leather.norm);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            norm.wrapS = norm.wrapT = THREE.RepeatWrapping;
+            // Da thật cần scale texture lặp lại hợp lý
+            tex.repeat.set(1.5, 1.5);
+            norm.repeat.set(1.5, 1.5);
+
+            // Tính màu trung bình để áp cho chỉ "Tiệp màu"
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            img.src = state.leather.tex;
+            img.onload = () => {
+                canvas.width = img.width; canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                const data = ctx.getImageData(0,0,img.width,img.height).data;
+                let r=0, g=0, b=0;
+                for(let i=0; i<data.length; i+=4){ r+=data[i]; g+=data[i+1]; b+=data[i+2]; }
+                const cnt = data.length/4;
+                currentLeatherColor.setRGB(r/cnt/255, g/cnt/255, b/cnt/255);
+                updateStitch();
+            };
+
+            strapMaterials.forEach(m => {
+                m.map = tex;
+                m.normalMap = norm;
+                m.normalScale.set(1.2, 1.2);
+                m.needsUpdate = true;
+            });
+
+            // 2. Cập nhật Khóa
+            hardwareMaterials.forEach(m => {
+                m.color.set(state.hardware.color);
+                m.metalness = state.hardware.metal;
+                m.roughness = state.hardware.rough;
+                m.needsUpdate = true;
+            });
+            
+            // 3. Cập nhật Vỏ Đồng Hồ & Mặt Dial
+            if (watchCaseMaterial && watchDialMaterial) {
+                watchCaseMaterial.color.set(state.watchCase.color);
+                watchCaseMaterial.metalness = state.watchCase.metal;
+                watchCaseMaterial.roughness = state.watchCase.rough;
+                
+                watchDialMaterial.color.set(state.watchDial.color);
+            }
+        }
+
+        function updateStitch() {
+            if (!strapModel) return;
+            const sColor = state.stitch.color === 'match' ? currentLeatherColor : new THREE.Color(state.stitch.color);
+            stitchMaterials.forEach(m => {
+                m.color = sColor;
+                m.needsUpdate = true;
+            });
+        }
+
+        function toggleWatch() {
+            state.showWatch = !state.showWatch;
+            if (watchGroup) watchGroup.visible = state.showWatch;
+            document.getElementById('btn-watch').innerText = state.showWatch ? '⌚ Mặt đồng hồ: BẬT' : '⌚ Mặt đồng hồ: TẮT';
+            document.getElementById('watch-options').style.display = state.showWatch ? 'block' : 'none';
+        }
+
+        function setCamera(view) {
+            document.querySelectorAll('.btn-cam').forEach(b => b.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            const dur = 1000;
+            const startPos = camera.position.clone();
+            let targetPos = new THREE.Vector3();
+            let targetLook = new THREE.Vector3(0,0,0);
+
+            if (view === 'front') { targetPos.set(-4, 5, 8); }
+            if (view === 'top') { targetPos.set(0, 10, 0); }
+            if (view === 'side') { targetPos.set(7, 2, 2); targetLook.set(3, 0, 0); } // Nhìn dọc theo đuôi dây
+
+            const startT = performance.now();
+            function anim() {
+                const now = performance.now();
+                const t = Math.min((now - startT) / dur, 1);
+                // ease out cubic
+                const e = 1 - Math.pow(1 - t, 3);
+                camera.position.lerpVectors(startPos, targetPos, e);
+                controls.target.lerpVectors(controls.target, targetLook, e);
+                if (t < 1) requestAnimationFrame(anim);
+            }
+            anim();
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- HÀM TƯƠNG TÁC TỪ UI ---
+        function selectLeather(id) { state.leather = leathers.find(l => l.id === id); renderUI(); update3D(); }
+        function selectStitch(id) { state.stitch = stitches.find(s => s.id === id); renderUI(); updateStitch(); }
+        function selectHardware(id) { state.hardware = hardwares.find(h => h.id === id); renderUI(); update3D(); }
+        function selectWatchCase(id) { state.watchCase = watchCases.find(c => c.id === id); renderUI(); update3D(); }
+        function selectWatchDial(id) { state.watchDial = watchDials.find(d => d.id === id); renderUI(); update3D(); }
+
+        // Khởi chạy
+        renderUI();
+        init3D();
+        animate();
+    </script>
+</body>
+</html>

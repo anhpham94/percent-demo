@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Test GLB Classic Model</title>
+  <style>
+    body { margin: 0; background: #1a1a1a; overflow: hidden; font-family: sans-serif; }
+    #info { position: absolute; top: 10px; left: 10px; color: #fff; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 8px; max-height: 90vh; overflow-y: auto; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+</head>
+<body>
+  <div id="info">Đang tải model...</div>
+  <script>
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xF6F0E5);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 100);
+    camera.position.set(0, 0.2, 0.3);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    // Lights
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xd4c5b9, 1.2);
+    scene.add(hemiLight);
+
+    const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.5);
+    dirLight1.position.set(2, 4, 3);
+    scene.add(dirLight1);
+
+    const dirLight2 = new THREE.DirectionalLight(0xffecd2, 0.8);
+    dirLight2.position.set(-2, 2, -2);
+    scene.add(dirLight2);
+
+    const loader = new THREE.GLTFLoader();
+    loader.load('models/classic.glb', (gltf) => {
+      const root = gltf.scene;
+      scene.add(root);
+
+      // Compute bounding box
+      const box = new THREE.Box3().setFromObject(root);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      console.log('Center:', center, 'Size:', size);
+
+      root.position.sub(center); // center at 0,0,0
+      camera.position.set(0, size.y * 1.5, size.z * 2.5);
+      controls.target.set(0, 0, 0);
+
+      const meshes = [];
+      root.traverse((child) => {
+        if (child.isMesh) {
+          meshes.push(child.name + ' (' + (child.material ? child.material.name : 'no mat') + ')');
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+
+      document.getElementById('info').innerHTML = `
+        <b>Đã nạp thành công Classic Model!</b><br>
+        Tổng số meshes: ${meshes.length}<br>
+        Kích thước: ${size.x.toFixed(2)} x ${size.y.toFixed(2)} x ${size.z.toFixed(2)}<br>
+        <div style="font-size:11px; margin-top:6px; max-height:200px; overflow-y:auto;">
+          ${meshes.slice(0, 30).join('<br>')}
+        </div>
+      `;
+    }, (progress) => {
+      document.getElementById('info').innerText = 'Đang tải: ' + ((progress.loaded / progress.total) * 100).toFixed(0) + '%';
+    }, (error) => {
+      document.getElementById('info').innerHTML = '<span style="color:red">Lỗi tải: ' + error.message + '</span>';
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
