@@ -321,10 +321,10 @@
                 // Chuẩn hóa vị trí model gốc
                 const box = new THREE.Box3().setFromObject(strapModel);
                 const center = box.getCenter(new THREE.Vector3());
-                // strapModel.position.sub(center); // Bỏ center đi để xem toạ độ gốc 
+                strapModel.position.sub(center); 
                 // Xoay cho dây nằm ngang ra dễ nhìn
-                // strapModel.rotation.z = Math.PI / 2;
-                // strapModel.rotation.y = Math.PI; // Ngửa lên
+                strapModel.rotation.z = Math.PI / 2;
+                strapModel.rotation.x = Math.PI / 2; // Ngửa lên
                 
                 scene.add(strapModel);
 
@@ -371,7 +371,7 @@
                 });
                 
                 // Dựng mô hình mặt đồng hồ thủ công cực nét (Procedural Watch Case)
-                createProceduralWatch();
+                
 
                 document.getElementById('loading').style.opacity = '0';
                 setTimeout(() => document.getElementById('loading').style.display = 'none', 500);
@@ -386,18 +386,7 @@
             });
         }
         
-        function createProceduralWatch() {
-            watchGroup = new THREE.Group();
-            
-            // Thông số mặt đồng hồ 40mm
-            const caseRadius = 1.0; 
-            const caseHeight = 0.2;
-            
-            watchCaseMaterial = new THREE.MeshStandardMaterial({
-                color: 0xe0e0e0,
-                metalness: 1.0,
-                roughness: 0.1
-            });
+        );
             
             watchDialMaterial = new THREE.MeshStandardMaterial({
                 color: 0xf5f5f5,
