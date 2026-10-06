@@ -835,57 +835,6 @@
     dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/');
     gltfLoader.setDRACOLoader(dracoLoader);
 
-    
-    // --- TẠO MẶT SỐ BẰNG CANVAS ---
-    function createDialTexture(color, style) {
-        const canvas = document.createElement('canvas');
-        canvas.width = 512;
-        canvas.height = 512;
-        const ctx = canvas.getContext('2d');
-        
-        // Nền
-        ctx.fillStyle = color;
-        ctx.fillRect(0, 0, 512, 512);
-        
-        ctx.translate(256, 256);
-        
-        // Vạch số
-        ctx.fillStyle = (color === '#ffffff' || color === '#f5f5f5') ? '#333' : '#fff';
-        for(let i=0; i<12; i++) {
-            ctx.save();
-            ctx.rotate((i * 30 * Math.PI) / 180);
-            if (style === 'Roman') {
-                const numerals = ['XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
-                ctx.font = 'bold 40px serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(numerals[i], 0, -190);
-            } else if (style === 'Minimal') {
-                ctx.fillRect(-2, -220, 4, 30);
-            } else {
-                ctx.fillRect(-4, -220, 8, 40);
-            }
-            ctx.restore();
-        }
-        
-        // Logo
-        ctx.font = 'bold 30px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('PERCENT', 0, -80);
-        ctx.font = '16px sans-serif';
-        ctx.fillText('AUTOMATIC', 0, 100);
-        
-        const tex = new THREE.CanvasTexture(canvas);
-        tex.anisotropy = 16;
-        return tex;
-    }
-
-    const dialTextures = {
-        white_classic: createDialTexture('#f5f5f5', 'Classic'),
-        black_minimal: createDialTexture('#222222', 'Minimal'),
-        blue_roman: createDialTexture('#1a365d', 'Roman')
-    };
-
     function init3D() {
       const container = document.querySelector('.viewport-container');
       const canvas = document.getElementById('webgl-canvas');
@@ -951,29 +900,7 @@
       scene.add(strapGroup);
 
       // Tải mô hình dây da
-      
-      // Dựng dây da 3D bằng mã (Procedural Strap) thay vì dùng mô hình Handdn
       buildWatchAndStrap();
-
-                      child.material = newMat;
-                      strapMaterials.push(newMat);
-                  } else if (mName.includes('stitch')) {
-                      const newMat = new THREE.MeshStandardMaterial({ roughness: 0.9, metalness: 0, color: 0xe8ddc5 });
-                      child.material = newMat;
-                      stitchMaterials.push(newMat);
-                  } else if (mName.includes('buckle') || mName.includes('wire')) {
-                      const newMat = new THREE.MeshStandardMaterial({ roughness: 0.2, metalness: 1.0, color: 0xeeeeee });
-                      child.material = newMat;
-                      hardwareMaterials.push(newMat);
-                  }
-              }
-          });
-
-          update3D();
-          if(currentConfig.showWatch) {
-              loadWatchFace(currentConfig.watchFace);
-          }
-      });
 
       // Render loop
       animate();
@@ -1229,38 +1156,13 @@
       watchGroup.add(watchCase);
 
       // Mặt Dial tròn đen sang trọng
-      
-      watchDialMaterial = new THREE.MeshPhysicalMaterial({ 
-          color: 0xffffff,
-          metalness: 0.1,
-          roughness: 0.8,
-          map: dialTextures.white_classic
-      });
-
-      // Vỏ tròn
-      const caseGeo = new THREE.CylinderGeometry(3.6, 3.6, 0.9, 48);
-      const watchCase = new THREE.Mesh(caseGeo, caseMetalMat);
-      watchCase.rotation.x = Math.PI / 2;
-      watchCase.castShadow = true;
-      watchGroup.add(watchCase);
-
-      // Mặt Dial
-      const dialGeo = new THREE.CircleGeometry(3.3, 48);
-      const dial = new THREE.Mesh(dialGeo, watchDialMaterial);
+      const dialGeo = new THREE.CircleGeometry(3.1, 48);
+      const dialMat = new THREE.MeshStandardMaterial({ color: 0x121212, roughness: 0.3 });
+      const dial = new THREE.Mesh(dialGeo, dialMat);
       dial.position.z = 0.46;
       watchGroup.add(dial);
-      
-      // Mặt kính (Kính lồi)
-      const glassGeo = new THREE.CylinderGeometry(3.3, 3.3, 0.1, 48);
-      const glassMat = new THREE.MeshPhysicalMaterial({
-          color: 0xffffff, transmission: 0.95, opacity: 1, transparent: true, roughness: 0, ior: 1.5
-      });
-      const glass = new THREE.Mesh(glassGeo, glassMat);
-      glass.rotation.x = Math.PI / 2;
-      glass.position.z = 0.55;
-      watchGroup.add(glass);
 
-      // 4 chân Càng Lug
+      // 4 chân Càng Lug giữ dây
       for (let side of [-1, 1]) {
         for (let end of [-1, 1]) {
           const lugGeo = new THREE.BoxGeometry(0.3, 0.45, 1.1);
