@@ -883,7 +883,7 @@
       pmremGenerator.compileEquirectangularShader();
       new THREE.RGBELoader()
         .setDataType(THREE.UnsignedByteType)
-        .load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/equirectangular/royal_esplanade_1k.hdr', function (texture) {
+        .load('https://raw.githubusercontent.com/mrdoob/three.js/r128/examples/textures/equirectangular/royal_esplanade_1k.hdr', function (texture) {
           const envMap = pmremGenerator.fromEquirectangular(texture).texture;
           scene.environment = envMap;
           texture.dispose();
