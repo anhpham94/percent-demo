@@ -793,12 +793,12 @@
   <script>
     // --- DATABASE SẢN PHẨM PERCENT CÓ SẴN (TEXTURE & NORMAL MAP TỰ ĐỘNG BÓC TÁCH TỪ ẢNH THẬT) ---
     const LEATHER_CATALOG = [
-      { id: 'agon-soil', name: 'Percent Agon', color: 'Nâu đất Soil', price: 600000, img: 'img/p01.jpg', tex: 'img/tex_p01.jpg', norm: 'img/norm_p01.jpg', hex: '#634E3F', roughness: 0.55 },
-      { id: 'karl-sepia', name: 'Percent Karl', color: 'Nâu hạt dẻ Sepia', price: 580000, img: 'img/p04.jpg', tex: 'img/tex_p04.jpg', norm: 'img/norm_p04.jpg', hex: '#5E4842', roughness: 0.50 },
-      { id: 'bruno-gold', name: 'Percent Bruno', color: 'Vàng bò Gold', price: 580000, img: 'img/p05.jpg', tex: 'img/tex_p05.jpg', norm: 'img/norm_p05.jpg', hex: '#876527', roughness: 0.60 },
-      { id: 'cosimo-navy', name: 'Percent Cosimo', color: 'Xanh Navy Ý', price: 580000, img: 'img/p08.jpg', tex: 'img/tex_p08.jpg', norm: 'img/norm_p08.jpg', hex: '#1C252B', roughness: 0.45 },
-      { id: 'matteo-wine', name: 'Percent Matteo', color: 'Đỏ rượu Wine Red', price: 580000, img: 'img/p10.jpg', tex: 'img/tex_p10.jpg', norm: 'img/norm_p10.jpg', hex: '#522421', roughness: 0.50 },
-      { id: 'knut-black', name: 'Percent Knut', color: 'Đen Cổ Điển', price: 520000, img: 'img/p03.jpg', tex: 'img/tex_p03.jpg', norm: 'img/norm_p03.jpg', hex: '#2A2C2B', roughness: 0.55 },
+      { id: 'agon-soil', name: 'Percent Agon', color: 'Nâu đất Soil', price: 600000, img: 'img/p01.jpg', tex: 'img/tex_ai_gray.jpg', norm: 'img/tex_ai_normal.jpg', roughMap: 'img/tex_ai_roughness.jpg', hex: '#634E3F', roughness: 0.55 },
+      { id: 'karl-sepia', name: 'Percent Karl', color: 'Nâu hạt dẻ Sepia', price: 580000, img: 'img/p04.jpg', tex: 'img/tex_ai_gray.jpg', norm: 'img/tex_ai_normal.jpg', roughMap: 'img/tex_ai_roughness.jpg', hex: '#5E4842', roughness: 0.50 },
+      { id: 'bruno-gold', name: 'Percent Bruno', color: 'Vàng bò Gold', price: 580000, img: 'img/p05.jpg', tex: 'img/tex_ai_gray.jpg', norm: 'img/tex_ai_normal.jpg', roughMap: 'img/tex_ai_roughness.jpg', hex: '#876527', roughness: 0.60 },
+      { id: 'cosimo-navy', name: 'Percent Cosimo', color: 'Xanh Navy Ý', price: 580000, img: 'img/p08.jpg', tex: 'img/tex_ai_gray.jpg', norm: 'img/tex_ai_normal.jpg', roughMap: 'img/tex_ai_roughness.jpg', hex: '#1C252B', roughness: 0.45 },
+      { id: 'matteo-wine', name: 'Percent Matteo', color: 'Đỏ rượu Wine Red', price: 580000, img: 'img/p10.jpg', tex: 'img/tex_ai_gray.jpg', norm: 'img/tex_ai_normal.jpg', roughMap: 'img/tex_ai_roughness.jpg', hex: '#522421', roughness: 0.50 },
+      { id: 'knut-black', name: 'Percent Knut', color: 'Đen Cổ Điển', price: 520000, img: 'img/p03.jpg', tex: 'img/tex_ai_gray.jpg', norm: 'img/tex_ai_normal.jpg', roughMap: 'img/tex_ai_roughness.jpg', hex: '#2A2C2B', roughness: 0.55 },
     ];
 
     const STITCH_COLORS = [
@@ -1210,6 +1210,9 @@
       scene.add(watchGroup);
     }
 
+    // Lấy map để load roughness
+    const leatherRoughnessMaps = {};
+
     // Tạo Material PBR từ ảnh da thật của Percent kèm vân Normal Map
     function createLeatherMaterial(leatherItem) {
       if (!leatherTextures[leatherItem.id]) {
@@ -1229,12 +1232,21 @@
         leatherNormalMaps[leatherItem.id] = norm;
       }
 
+      if (leatherItem.roughMap && !leatherRoughnessMaps[leatherItem.id]) {
+        const rough = textureLoader.load(leatherItem.roughMap);
+        rough.wrapS = THREE.RepeatWrapping;
+        rough.wrapT = THREE.RepeatWrapping;
+        rough.repeat.set(2.0, 6.0);
+        leatherRoughnessMaps[leatherItem.id] = rough;
+      }
+
       const mat = new THREE.MeshStandardMaterial({
         color: new THREE.Color(leatherItem.hex),
         map: leatherTextures[leatherItem.id],
         normalMap: leatherNormalMaps[leatherItem.id] || null,
         normalScale: new THREE.Vector2(0.85, 0.85),
-        roughness: leatherItem.roughness,
+        roughnessMap: leatherRoughnessMaps[leatherItem.id] || null,
+        roughness: leatherItem.roughMap ? 1.0 : leatherItem.roughness,
         metalness: 0.05
       });
 
