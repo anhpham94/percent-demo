@@ -8,6 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
     <style>
         :root {
             --bg-color: #F6F0E5;
@@ -85,9 +86,9 @@
 
     <div id="canvas-container">
         <div class="camera-controls">
-            <button class="btn-cam active" onclick="setCamera('front')">🚀 Toàn cảnh</button>
-            <button class="btn-cam" onclick="setCamera('top')">⬆️ Chụp thẳng</button>
-            <button class="btn-cam" onclick="setCamera('side')">🔍 Xem độn phồng</button>
+            <button class="btn-cam active" onclick="setCamera('front', this)">🚀 Toàn cảnh</button>
+            <button class="btn-cam" onclick="setCamera('top', this)">⬆️ Chụp thẳng</button>
+            <button class="btn-cam" onclick="setCamera('side', this)">🔍 Xem độn phồng</button>
         </div>
         <div class="watch-toggle">
             <button class="btn-cam active" id="btn-watch" onclick="toggleWatch()">⌚ Mặt đồng hồ: BẬT</button>
@@ -310,6 +311,10 @@
         // CÁC HÀM XỬ LÝ 3D
         function init3D() {
             const loader = new THREE.GLTFLoader();
+            const dracoLoader = new THREE.DRACOLoader();
+            dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/');
+            loader.setDRACOLoader(dracoLoader);
+            
             loader.load('models/classic.glb', (gltf) => {
                 strapModel = gltf.scene;
                 
@@ -412,7 +417,7 @@
             const glassGeo = new THREE.CylinderGeometry(caseRadius*0.9, caseRadius*0.9, 0.05, 64);
             const glassMat = new THREE.MeshPhysicalMaterial({
                 color: 0xffffff, transmission: 0.9, opacity: 1, transparent: true,
-                roughness: 0, ior: 1.5, thickness: 0.1
+                roughness: 0
             });
             const glassMesh = new THREE.Mesh(glassGeo, glassMat);
             glassMesh.position.z = caseHeight/2 + 0.025;
@@ -547,9 +552,14 @@
             document.getElementById('watch-options').style.display = state.showWatch ? 'block' : 'none';
         }
 
-        function setCamera(view) {
+        function setCamera(view, btn) {
             document.querySelectorAll('.btn-cam').forEach(b => b.classList.remove('active'));
-            event.currentTarget.classList.add('active');
+            if (btn) {
+                btn.classList.add('active');
+            } else {
+                // Mặc định chọn nút đầu tiên nếu gọi từ code
+                document.querySelector('.btn-cam').classList.add('active');
+            }
 
             const dur = 1000;
             const startPos = camera.position.clone();
