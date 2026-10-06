@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Watch Configurator - Percent</title>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; overflow: hidden; background: #F6F0E5; font-family: 'Be Vietnam Pro', sans-serif; }
+        #canvas-container { width: 100vw; height: 100vh; }
+        .controls { position: absolute; top: 20px; left: 20px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 10; width: 300px; }
+        .controls h3 { margin-top: 0; margin-bottom: 15px; font-size: 14px; text-transform: uppercase; color: #333; }
+        select { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; }
+        button { width: 100%; padding: 10px; background: #9C5A2C; color: white; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; }
+        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 600; font-size: 18px; color: #9C5A2C; display: none; }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="loading">Loading 3D Model...</div>
+    <div class="controls">
+        <h3>Watch Face Style</h3>
+        <select id="faceSelect">
+            <option value="none">Strap Only (No Face)</option>
+            <option value="rolex">Classic Round (Rolex)</option>
+            <option value="apple">Apple Watch Ultra 2</option>
+            <option value="smart">Minimal Smartwatch</option>
+        </select>
+        <button onclick="changeFace()">Apply Face</button>
+    </div>
+    <div id="canvas-container"></div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
+        let scene, camera, renderer, controls;
+        let currentFace = null;
+        let strapModel = null;
+        const loader = new GLTFLoader();
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath('https://unpkg.com/three@0.160.0/examples/jsm/libs/draco/');
+        loader.setDRACOLoader(dracoLoader);
+
+        init();
+        animate();
+
+        function init() {
+            const container = document.getElementById('canvas-container');
+            
+            scene = new THREE.Scene();
+            
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(0, 0, 5);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.0;
+            container.appendChild(renderer.domElement);
+            
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.minDistance = 2;
+            controls.maxDistance = 10;
+            
+            // Lighting
+            const ambient = new THREE.AmbientLight(0xffffff, 1.5);
+            scene.add(ambient);
+            
+            const dirLight = new THREE.DirectionalLight(0xffffff, 2);
+            dirLight.position.set(5, 5, 5);
+            scene.add(dirLight);
+
+            // Load base strap
+            loadStrap();
+        }
+
+        function loadStrap() {
+            document.getElementById('loading').style.display = 'block';
+            loader.load('models/classic.glb', (gltf) => {
+                strapModel = gltf.scene;
+                
+                // Hide case/dial if they exist in classic.glb to just keep the strap
+                strapModel.traverse((child) => {
+                    if (child.isMesh) {
+                        if (child.name.toLowerCase().includes('case') || child.name.toLowerCase().includes('dial')) {
+                            child.visible = false;
+                        }
+                    }
+                });
+
+                // Scale up strap slightly to be clearly visible
+                strapModel.scale.set(5, 5, 5);
+                strapModel.position.set(0, 0, 0);
+                scene.add(strapModel);
+                document.getElementById('loading').style.display = 'none';
+            });
+        }
+
+        window.changeFace = function() {
+            const faceType = document.getElementById('faceSelect').value;
+            
+            if (currentFace) {
+                scene.remove(currentFace);
+                currentFace = null;
+            }
+
+            if (faceType === 'none') {
+                return;
+            }
+
+            let modelPath = '';
+            let scale = 1;
+            let position = new THREE.Vector3(0, 0, 0);
+
+            if (faceType === 'rolex') {
+                modelPath = 'models/rolex.glb';
+                scale = 10;
+            } else if (faceType === 'apple') {
+                modelPath = 'models/apple_watch_ultra_2.glb';
+                scale = 0.5;
+            } else if (faceType === 'smart') {
+                modelPath = 'models/ugia_watch.glb';
+                scale = 5;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            loader.load(modelPath, (gltf) => {
+                currentFace = gltf.scene;
+                currentFace.scale.set(scale, scale, scale);
+                currentFace.position.copy(position);
+                scene.add(currentFace);
+                document.getElementById('loading').style.display = 'none';
+            });
+        };
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
