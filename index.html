@@ -11,6 +11,8 @@
   <!-- Three.js & OrbitControls -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
   <style>
@@ -657,6 +659,17 @@
 
         <!-- Step 3: Khóa & Kim Loại -->
         <div class="step-section">
+          <!-- Watch face toggle -->
+          <div class="step-header" style="margin-bottom: 10px;">
+            <span class="step-title" style="font-size: 11px;">Mặt đồng hồ ướm thử</span>
+            <span class="step-selected-val" id="val-watchface">Apple Watch Ultra</span>
+          </div>
+          <div class="pill-group" style="margin-bottom: 20px;">
+            <div class="size-pill active watchface-pill" onclick="setWatchFace('apple')">Apple</div>
+            <div class="size-pill watchface-pill" onclick="setWatchFace('rolex')">Rolex</div>
+            <div class="size-pill watchface-pill" onclick="setWatchFace('ugia')">Ugia</div>
+          </div>
+
           <div class="step-header">
             <span class="step-title"><span class="step-num">3</span> Khóa & Màu Kim Loại</span>
             <span class="step-selected-val" id="val-buckle">Bạc Inox (Khóa kim)</span>
@@ -779,6 +792,12 @@
       { id: 'black', name: 'Đen PVD', hex: '#242424', metalness: 0.85, roughness: 0.25 }
     ];
 
+    const WATCH_FACES = [
+      { id: 'apple', name: 'Apple Watch Ultra', file: 'models/apple_watch_ultra_2.glb', scale: 0.5, px: 0, py: 0, pz: 0, rx: 0, ry: 0, rz: 0 },
+      { id: 'rolex', name: 'Rolex', file: 'models/rolex.glb', scale: 1.5, px: 0, py: 0, pz: 0.5, rx: 0, ry: 0, rz: 0 },
+      { id: 'ugia', name: 'Ugia Watch', file: 'models/ugia_watch.glb', scale: 0.05, px: 0, py: 0, pz: 0.5, rx: Math.PI/2, ry: 0, rz: 0 }
+    ];
+
     // Trạng thái cấu hình hiện tại
     const currentConfig = {
       leather: LEATHER_CATALOG[0],
@@ -789,16 +808,30 @@
       wristSize: '16.5 cm (Chuẩn 115/75mm)',
       engraving: '',
       showWatch: true,
+      watchFace: WATCH_FACES[0],
       autoRotate: false
     };
 
     // --- THREE.JS SCENE SETUP ---
     let scene, camera, renderer, controls;
-    let strapGroup, watchGroup;
-    let shortStrapMesh, longStrapMesh, buckleGroup, stitchMeshes = [];
+    let strapModel = null;
+    let strapGroup = new THREE.Group();
+    let strapMaterials = [];
+    let stitchMaterials = [];
+    let hardwareMaterials = [];
+    let watchGroup = null;
+    let loadedWatches = {};
     let textureLoader;
     let leatherTextures = {};
+    let leatherNormalMaps = {};
+    let currentLeatherColor = new THREE.Color();
+    
     let engraveTextureCanvas, engraveTextureContext, engraveTexture;
+
+    const gltfLoader = new THREE.GLTFLoader();
+    const dracoLoader = new THREE.DRACOLoader();
+    dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/');
+    gltfLoader.setDRACOLoader(dracoLoader);
 
     function init3D() {
       const container = document.querySelector('.viewport-container');
@@ -860,8 +893,45 @@
       // Canvas động cho chữ khắc Laser
       initEngraveCanvas();
 
-      // Dựng cấu trúc hình học 3D hoàn chỉnh
-      buildWatchAndStrap();
+      scene.add(strapGroup);
+
+      // Tải mô hình dây da
+      gltfLoader.load('models/classic.glb', (gltf) => {
+          strapModel = gltf.scene;
+          const box = new THREE.Box3().setFromObject(strapModel);
+          const center = box.getCenter(new THREE.Vector3());
+          strapModel.position.sub(center); 
+          strapModel.rotation.z = Math.PI / 2;
+          strapModel.rotation.x = Math.PI / 2;
+          
+          strapGroup.add(strapModel);
+
+          strapModel.traverse((child) => {
+              if (child.isMesh) {
+                  child.castShadow = true;
+                  child.receiveShadow = true;
+                  const mName = child.name.toLowerCase();
+                  if (mName.includes('leather') || mName.includes('padded') || mName.includes('tip') || mName.includes('keeper')) {
+                      const newMat = new THREE.MeshStandardMaterial({ roughness: 0.65, metalness: 0.05, color: 0xffffff });
+                      child.material = newMat;
+                      strapMaterials.push(newMat);
+                  } else if (mName.includes('stitch')) {
+                      const newMat = new THREE.MeshStandardMaterial({ roughness: 0.9, metalness: 0, color: 0xe8ddc5 });
+                      child.material = newMat;
+                      stitchMaterials.push(newMat);
+                  } else if (mName.includes('buckle') || mName.includes('wire')) {
+                      const newMat = new THREE.MeshStandardMaterial({ roughness: 0.2, metalness: 1.0, color: 0xeeeeee });
+                      child.material = newMat;
+                      hardwareMaterials.push(newMat);
+                  }
+              }
+          });
+
+          update3D();
+          if(currentConfig.showWatch) {
+              loadWatchFace(currentConfig.watchFace);
+          }
+      });
 
       // Render loop
       animate();
@@ -1181,6 +1251,91 @@
       return mat;
     }
 
+
+    function loadWatchFace(faceConfig) {
+        if(watchGroup) watchGroup.visible = false;
+        if(!faceConfig || !currentConfig.showWatch) return;
+        
+        if(loadedWatches[faceConfig.id]) {
+            watchGroup = loadedWatches[faceConfig.id];
+            watchGroup.visible = true;
+            return;
+        }
+        
+        gltfLoader.load(faceConfig.file, (gltf) => {
+            const watchModel = gltf.scene;
+            const box = new THREE.Box3().setFromObject(watchModel);
+            const center = box.getCenter(new THREE.Vector3());
+            watchModel.position.sub(center);
+            
+            watchModel.scale.set(faceConfig.scale, faceConfig.scale, faceConfig.scale);
+            watchModel.position.set(faceConfig.px, faceConfig.py, faceConfig.pz);
+            watchModel.rotation.set(faceConfig.rx, faceConfig.ry, faceConfig.rz);
+            
+            const group = new THREE.Group();
+            group.add(watchModel);
+            group.position.set(0, 0, 0.4); 
+            group.rotation.z = -Math.PI / 2;
+            
+            scene.add(group);
+            loadedWatches[faceConfig.id] = group;
+            watchGroup = group;
+        });
+    }
+
+    function update3D() {
+        if (!strapModel) return;
+
+        const tex = textureLoader.load(currentConfig.leather.tex || currentConfig.leather.img);
+        const norm = currentConfig.leather.norm ? textureLoader.load(currentConfig.leather.norm) : null;
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        if(norm) norm.wrapS = norm.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(1.5, 1.5);
+        if(norm) norm.repeat.set(1.5, 1.5);
+
+        const img = new Image();
+        img.src = currentConfig.leather.tex || currentConfig.leather.img;
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.width; canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            const data = ctx.getImageData(0,0,img.width,img.height).data;
+            let r=0, g=0, b=0;
+            for(let i=0; i<data.length; i+=4){ r+=data[i]; g+=data[i+1]; b+=data[i+2]; }
+            const cnt = data.length/4;
+            currentLeatherColor.setRGB(r/cnt/255, g/cnt/255, b/cnt/255);
+            updateStitch();
+        };
+
+        strapMaterials.forEach(m => {
+            m.map = tex;
+            if(norm) {
+                m.normalMap = norm;
+                if(m.normalScale) m.normalScale.set(1.2, 1.2);
+            }
+            m.color.setHex(0xffffff);
+            m.roughness = currentConfig.leather.roughness || 0.65;
+            m.needsUpdate = true;
+        });
+
+        hardwareMaterials.forEach(m => {
+            m.color.set(currentConfig.buckleMetal.hex);
+            m.metalness = currentConfig.buckleMetal.metalness;
+            m.roughness = currentConfig.buckleMetal.roughness;
+            m.needsUpdate = true;
+        });
+    }
+
+    function updateStitch() {
+        if (!strapModel) return;
+        const sColor = currentConfig.stitch.id === 'matching' ? currentLeatherColor : new THREE.Color(currentConfig.stitch.hex);
+        stitchMaterials.forEach(m => {
+            m.color = sColor;
+            m.needsUpdate = true;
+        });
+    }
+    
     // Render loop
     function animate() {
       requestAnimationFrame(animate);
@@ -1207,10 +1362,8 @@
       if (!item) return;
       currentConfig.leather = item;
 
-      // Cập nhật 3D material
-      const newMat = createLeatherMaterial(item);
-      shortStrapMesh.material = newMat;
-      longStrapMesh.material = newMat;
+      // Cập nhật 3D
+      update3D();
 
       // Cập nhật UI
       document.getElementById('val-leather').innerText = `${item.name} (${item.color})`;
@@ -1226,11 +1379,7 @@
       if (!item) return;
       currentConfig.stitch = item;
 
-      // Nếu là tiệp màu da thì lấy mã hex của da hiện tại
-      const hex = item.id === 'matching' ? currentConfig.leather.hex : item.hex;
-      stitchMeshes.forEach(mesh => {
-        mesh.material.color.set(hex);
-      });
+      updateStitch();
 
       document.getElementById('val-stitch').innerText = item.name;
       document.querySelectorAll('.stitch-swatch').forEach(s => {
@@ -1243,15 +1392,7 @@
       if (!item) return;
       currentConfig.buckleMetal = item;
 
-      if (buckleGroup) {
-        buckleGroup.traverse(child => {
-          if (child.isMesh && child.material && child.geometry.type.includes('Torus') || child.geometry.type.includes('Cylinder')) {
-            child.material.color.set(item.hex);
-            child.material.metalness = item.metalness;
-            child.material.roughness = item.roughness;
-          }
-        });
-      }
+      update3D();
 
       document.getElementById('val-buckle').innerText = `${item.name} (${currentConfig.buckleType === 'tang' ? 'Khóa kim' : 'Khóa bướm'})`;
       document.querySelectorAll('.buckle-card').forEach(b => {
@@ -1338,11 +1479,31 @@
 
     function toggleWatchCase() {
       currentConfig.showWatch = !currentConfig.showWatch;
-      watchGroup.visible = currentConfig.showWatch;
       const btn = document.getElementById('btn-toggle-watch');
       btn.innerText = `⌚ Ướm Đồng Hồ: ${currentConfig.showWatch ? 'BẬT' : 'TẮT'}`;
       btn.classList.toggle('active', currentConfig.showWatch);
+      
+      if(currentConfig.showWatch) {
+          loadWatchFace(currentConfig.watchFace);
+      } else if(watchGroup) {
+          watchGroup.visible = false;
+      }
     }
+    
+    function setWatchFace(faceId) {
+        const face = WATCH_FACES.find(f => f.id === faceId);
+        if(!face) return;
+        currentConfig.watchFace = face;
+        
+        document.getElementById('val-watchface').innerText = face.name;
+        document.querySelectorAll('.watchface-pill').forEach(p => p.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        if(currentConfig.showWatch) {
+            loadWatchFace(face);
+        }
+    }
+    
 
     function toggleAutoRotate() {
       currentConfig.autoRotate = !currentConfig.autoRotate;
