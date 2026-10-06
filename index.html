@@ -665,10 +665,10 @@
             <span class="step-selected-val" id="val-watchface">Apple Watch Ultra</span>
           </div>
           <div class="pill-group" style="margin-bottom: 20px;">
-            <div class="size-pill active watchface-pill" onclick="setWatchFace('apple')">Apple</div>
-            <div class="size-pill watchface-pill" onclick="setWatchFace('rolex')">Rolex</div>
-            <div class="size-pill watchface-pill" onclick="setWatchFace('ugia')">Ugia</div>
-            <div class="size-pill watchface-pill" onclick="setWatchFace('chronograph')">Chronograph</div>
+            <div class="size-pill active watchface-pill" onclick="setWatchFace('apple', this)">Apple</div>
+            <div class="size-pill watchface-pill" onclick="setWatchFace('rolex', this)">Rolex</div>
+            <div class="size-pill watchface-pill" onclick="setWatchFace('ugia', this)">Ugia</div>
+            <div class="size-pill watchface-pill" onclick="setWatchFace('chronograph', this)">Chronograph</div>
           </div>
 
           <div class="step-header">
@@ -811,7 +811,7 @@
       engraving: '',
       showWatch: true,
       watchFace: WATCH_FACES[0],
-      autoRotate: false
+      autoRotate: true
     };
 
     // --- THREE.JS SCENE SETUP ---
@@ -858,6 +858,8 @@
       controls.dampingFactor = 0.05;
       controls.maxDistance = 55;
       controls.minDistance = 12;
+      controls.autoRotate = true;
+      controls.autoRotateSpeed = 2.0;
       controls.maxPolarAngle = Math.PI / 2 + 0.1;
       controls.target.set(0, 0, 0);
 
@@ -1327,12 +1329,6 @@
     // Render loop
     function animate() {
       requestAnimationFrame(animate);
-
-      if (currentConfig.autoRotate) {
-        strapGroup.rotation.y += 0.006;
-        if (watchGroup) watchGroup.rotation.y += 0.006;
-      }
-
       controls.update();
       renderer.render(scene, camera);
     }
@@ -1426,7 +1422,7 @@
     // --- CÁC GÓC NHÌN CAMERA PRESET ---
     function setCameraView(preset) {
       document.querySelectorAll('.camera-presets .vp-btn').forEach(b => b.classList.remove('active'));
-      event.target.classList.add('active');
+      if(event) event.target.classList.add('active');
 
       switch(preset) {
         case 'overview':
@@ -1478,14 +1474,15 @@
       }
     }
     
-    function setWatchFace(faceId) {
+    function setWatchFace(faceId, el) {
         const face = WATCH_FACES.find(f => f.id === faceId);
         if(!face) return;
         currentConfig.watchFace = face;
         
         document.getElementById('val-watchface').innerText = face.name;
         document.querySelectorAll('.watchface-pill').forEach(p => p.classList.remove('active'));
-        event.target.classList.add('active');
+        if(el) el.classList.add('active');
+        else if(typeof event !== 'undefined' && event && event.target) event.target.classList.add('active');
         
         if(currentConfig.showWatch) {
             loadWatchFace(face);
@@ -1496,7 +1493,8 @@
     function toggleAutoRotate() {
       currentConfig.autoRotate = !currentConfig.autoRotate;
       const btn = document.getElementById('btn-toggle-rotate');
-      btn.classList.toggle('active', currentConfig.autoRotate);
+      if (btn) btn.classList.toggle('active', currentConfig.autoRotate);
+      controls.autoRotate = currentConfig.autoRotate;
     }
 
     // Chụp snapshot tải về
