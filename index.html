@@ -978,12 +978,6 @@
 
       // Tạo vật liệu da ban đầu
       const leatherMaterial = createLeatherMaterial(currentConfig.leather);
-      const edgeMaterial = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(currentConfig.leather.hex).lerp(new THREE.Color(0x000000), 0.3), // Tối hơn màu da
-        roughness: 0.6,
-        metalness: 0.1
-      });
-      const multiMaterial = [leatherMaterial, edgeMaterial];
 
       // 1. DÂY NGẮN (Short Strap - Buckle Side)
       const shortCurve = new THREE.CubicBezierCurve3(
@@ -992,7 +986,7 @@
         new THREE.Vector3(0, -2.5, 9.5),  // Thân giữa
         new THREE.Vector3(0, -4.5, 12.0)  // Chân khóa
       );
-      shortStrapMesh = createCurvedStrapMesh(shortCurve, 2.0, 1.8, 0.28, multiMaterial, edgeMaterial);
+      shortStrapMesh = createCurvedStrapMesh(shortCurve, 2.0, 1.8, 0.32, leatherMaterial);
       shortStrapMesh.castShadow = true;
       strapGroup.add(shortStrapMesh);
 
@@ -1003,7 +997,7 @@
         new THREE.Vector3(0, -3.2, -12.0), // Thân có lỗ
         new THREE.Vector3(0, -5.8, -16.5)  // Đuôi nhọn
       );
-      longStrapMesh = createCurvedStrapMesh(longCurve, 2.0, 1.75, 0.28, multiMaterial, edgeMaterial, true);
+      longStrapMesh = createCurvedStrapMesh(longCurve, 2.0, 1.75, 0.32, leatherMaterial, true);
       longStrapMesh.castShadow = true;
       strapGroup.add(longStrapMesh);
 
@@ -1024,7 +1018,7 @@
     }
 
     // Hàm tạo thân dây uốn cong mượt mà theo đường cong Bezier
-    function createCurvedStrapMesh(curve, widthStart, widthEnd, thickness, material, edgeMaterial, isPointed = false) {
+    function createCurvedStrapMesh(curve, widthStart, widthEnd, thickness, material, isPointed = false) {
       const segments = 36;
       const points = curve.getPoints(segments);
       const geom = new THREE.BufferGeometry();
@@ -1033,12 +1027,6 @@
       const normals = [];
       const uvs = [];
       const indices = [];
-      
-      // We will define two groups: group 0 for top/bottom (material), group 1 for sides (edgeMaterial)
-      // Since all triangles are added sequentially, we can just group them.
-      // But it's easier to put them in separate arrays and then merge them, or addGroup manually.
-      const topBottomIndices = [];
-      const edgeIndices = [];
 
       for (let i = 0; i <= segments; i++) {
         const t = i / segments;
@@ -1054,16 +1042,10 @@
         const side = new THREE.Vector3().crossVectors(tangent, normal).normalize();
 
         // 4 đỉnh mặt cắt (Top-Left, Top-Right, Bottom-Left, Bottom-Right)
-        // Lưu ý: ta làm cho bề mặt hơi phồng (padded) ở giữa
-        const padOffset = 0.06 * Math.sin(Math.PI * t); // phồng nhẹ ở thân dây
-        
         const tl = p.clone().addScaledVector(side, -currentW).addScaledVector(normal, thickness / 2);
         const tr = p.clone().addScaledVector(side, currentW).addScaledVector(normal, thickness / 2);
         const bl = p.clone().addScaledVector(side, -currentW).addScaledVector(normal, -thickness / 2);
         const br = p.clone().addScaledVector(side, currentW).addScaledVector(normal, -thickness / 2);
-        
-        // Đỉnh giữa (phồng lên)
-        const topMid = p.clone().addScaledVector(normal, (thickness / 2) + padOffset);
 
         vertices.push(tl.x, tl.y, tl.z,  tr.x, tr.y, tr.z,  bl.x, bl.y, bl.z,  br.x, br.y, br.z);
         normals.push(0, 1, 0,  0, 1, 0,  0, -1, 0,  0, -1, 0);
@@ -1072,25 +1054,20 @@
         if (i < segments) {
           const base = i * 4;
           // Mặt trên
-          topBottomIndices.push(base, base + 1, base + 5,  base, base + 5, base + 4);
+          indices.push(base, base + 1, base + 5,  base, base + 5, base + 4);
           // Mặt dưới
-          topBottomIndices.push(base + 2, base + 6, base + 7,  base + 2, base + 7, base + 3);
+          indices.push(base + 2, base + 6, base + 7,  base + 2, base + 7, base + 3);
           // Viền trái (Sơn cạnh)
-          edgeIndices.push(base, base + 4, base + 6,  base, base + 6, base + 2);
+          indices.push(base, base + 4, base + 6,  base, base + 6, base + 2);
           // Viền phải (Sơn cạnh)
-          edgeIndices.push(base + 1, base + 3, base + 7,  base + 1, base + 7, base + 5);
+          indices.push(base + 1, base + 3, base + 7,  base + 1, base + 7, base + 5);
         }
       }
 
       geom.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
       geom.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
       geom.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-      
-      const allIndices = topBottomIndices.concat(edgeIndices);
-      geom.setIndex(allIndices);
-      
-      geom.addGroup(0, topBottomIndices.length, 0); // Material 0 (Leather)
-      geom.addGroup(topBottomIndices.length, edgeIndices.length, 1); // Material 1 (Edge paint)
+      geom.setIndex(indices);
       geom.computeVertexNormals();
 
       return new THREE.Mesh(geom, material);
@@ -1113,35 +1090,27 @@
     function createStitching(shortCurve, longCurve) {
       const stitchMat = new THREE.MeshStandardMaterial({
         color: new THREE.Color(currentConfig.stitch.hex),
-        roughness: 0.9,
-        metalness: 0.0
+        roughness: 0.8,
+        metalness: 0.05
       });
 
       function addStitchLine(curve, sideOffset, widthStart, widthEnd) {
-        const count = 35; // Tăng số mũi chỉ
+        const count = 28;
         for (let i = 2; i < count; i++) {
           const t = i / count;
           const p = curve.getPoint(t);
           const tangent = curve.getTangent(t).normalize();
           const normal = new THREE.Vector3(0, 1, 0);
           const side = new THREE.Vector3().crossVectors(tangent, normal).normalize();
-          const w = (widthStart + (widthEnd - widthStart) * t) / 2 - 0.16;
+          const w = (widthStart + (widthEnd - widthStart) * t) / 2 - 0.14;
 
-          // Thay hộp bằng Cylinder nằm ngang nghiêng để giống chỉ thật
-          const stitchGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.18, 6);
+          const stitchGeo = new THREE.BoxGeometry(0.04, 0.035, 0.16);
           const stitch = new THREE.Mesh(stitchGeo, stitchMat);
           
-          const pos = p.clone().addScaledVector(side, sideOffset * w).addScaledVector(normal, 0.14);
+          const pos = p.clone().addScaledVector(side, sideOffset * w).addScaledVector(normal, 0.17);
           stitch.position.copy(pos);
-          
-          // Căn chỉnh Cylinder nằm dọc theo tiếp tuyến
-          const up = new THREE.Vector3(0, 1, 0);
-          stitch.quaternion.setFromUnitVectors(up, tangent);
-          
-          // Nghiêng mũi chỉ để giống saddle stitch
-          stitch.rotation.z = Math.PI / 2; // Nằm ngang ra
-          stitch.rotateOnAxis(new THREE.Vector3(1,0,0), 0.25); // Nghiêng mũi
-
+          stitch.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), tangent);
+          stitch.rotation.y += (i % 2 === 0 ? 0.15 : -0.15); // Góc đan chỉ chéo thủ công
           strapGroup.add(stitch);
           stitchMeshes.push(stitch);
         }
@@ -1211,86 +1180,31 @@
       watchGroup = new THREE.Group();
 
       const caseMetalMat = new THREE.MeshStandardMaterial({
-        color: 0xE8E8E8,
-        metalness: 1.0,
-        roughness: 0.15
+        color: 0xE0E0E0,
+        metalness: 0.95,
+        roughness: 0.18
       });
 
-      // Vỏ chính (Thân đồng hồ)
-      const caseGeo = new THREE.CylinderGeometry(3.6, 3.4, 0.8, 64);
+      // Vỏ tròn
+      const caseGeo = new THREE.CylinderGeometry(3.6, 3.6, 0.9, 48);
       const watchCase = new THREE.Mesh(caseGeo, caseMetalMat);
       watchCase.rotation.x = Math.PI / 2;
       watchCase.castShadow = true;
-      watchCase.receiveShadow = true;
       watchGroup.add(watchCase);
-      
-      // Viền Bezel
-      const bezelGeo = new THREE.TorusGeometry(3.45, 0.15, 16, 64);
-      const bezel = new THREE.Mesh(bezelGeo, caseMetalMat);
-      bezel.position.z = 0.4;
-      watchGroup.add(bezel);
 
-      // Mặt Dial tròn có Gradient mờ hoặc tia Sunburst
-      const dialGeo = new THREE.CircleGeometry(3.35, 64);
-      const dialMat = new THREE.MeshStandardMaterial({ 
-        color: 0x1a1a1a, 
-        roughness: 0.4,
-        metalness: 0.6
-      });
+      // Mặt Dial tròn đen sang trọng
+      const dialGeo = new THREE.CircleGeometry(3.1, 48);
+      const dialMat = new THREE.MeshStandardMaterial({ color: 0x121212, roughness: 0.3 });
       const dial = new THREE.Mesh(dialGeo, dialMat);
-      dial.position.z = 0.41;
+      dial.position.z = 0.46;
       watchGroup.add(dial);
-      
-      // Kính vòm (Sapphire Glass)
-      const glassGeo = new THREE.SphereGeometry(3.4, 64, 32, 0, Math.PI * 2, 0, Math.PI / 8);
-      const glassMat = new THREE.MeshPhysicalMaterial({
-        color: 0xffffff,
-        transmission: 1.0, // Trong suốt như kính
-        opacity: 1,
-        metalness: 0,
-        roughness: 0,
-        ior: 1.5,
-        thickness: 0.1,
-        envMapIntensity: 1.5,
-        transparent: true
-      });
-      const glass = new THREE.Mesh(glassGeo, glassMat);
-      glass.rotation.x = Math.PI / 2;
-      glass.position.z = -2.8; // Đưa tâm cầu xuống để tạo vòm mỏng
-      watchGroup.add(glass);
-      
-      // Cọc số & Kim đồng hồ đơn giản
-      const handsMat = new THREE.MeshStandardMaterial({ color: 0xdddddd, metalness: 0.8, roughness: 0.2 });
-      
-      // Kim Giờ
-      const hourHandGeo = new THREE.BoxGeometry(0.1, 1.4, 0.02);
-      const hourHand = new THREE.Mesh(hourHandGeo, handsMat);
-      hourHand.position.set(0, 0.5, 0.43);
-      hourHand.rotation.z = -Math.PI / 4;
-      watchGroup.add(hourHand);
-      
-      // Kim Phút
-      const minHandGeo = new THREE.BoxGeometry(0.08, 2.2, 0.02);
-      const minHand = new THREE.Mesh(minHandGeo, handsMat);
-      minHand.position.set(0, 0.9, 0.45);
-      minHand.rotation.z = Math.PI / 6;
-      watchGroup.add(minHand);
-      
-      // Trục kim
-      const centerPinGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.08, 16);
-      const centerPin = new THREE.Mesh(centerPinGeo, handsMat);
-      centerPin.rotation.x = Math.PI / 2;
-      centerPin.position.set(0, 0, 0.46);
-      watchGroup.add(centerPin);
 
       // 4 chân Càng Lug giữ dây
       for (let side of [-1, 1]) {
         for (let end of [-1, 1]) {
-          const lugGeo = new THREE.BoxGeometry(0.3, 0.5, 1.2);
+          const lugGeo = new THREE.BoxGeometry(0.3, 0.45, 1.1);
           const lug = new THREE.Mesh(lugGeo, caseMetalMat);
-          lug.position.set(side * 1.3, 0, end * 3.6);
-          // Vát nhẹ lug cho thanh thoát
-          lug.rotation.x = end * -0.1;
+          lug.position.set(side * 1.15, 0, end * 3.7);
           watchGroup.add(lug);
         }
       }
@@ -1308,7 +1222,7 @@
         const tex = textureLoader.load(texPath);
         tex.wrapS = THREE.RepeatWrapping;
         tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(1.0, 5.0);
+        tex.repeat.set(2.0, 6.0);
         leatherTextures[leatherItem.id] = tex;
       }
 
@@ -1316,7 +1230,7 @@
         const norm = textureLoader.load(leatherItem.norm);
         norm.wrapS = THREE.RepeatWrapping;
         norm.wrapT = THREE.RepeatWrapping;
-        norm.repeat.set(1.0, 5.0);
+        norm.repeat.set(2.0, 6.0);
         leatherNormalMaps[leatherItem.id] = norm;
       }
 
@@ -1324,7 +1238,7 @@
         const rough = textureLoader.load(leatherItem.roughMap);
         rough.wrapS = THREE.RepeatWrapping;
         rough.wrapT = THREE.RepeatWrapping;
-        rough.repeat.set(1.0, 5.0);
+        rough.repeat.set(2.0, 6.0);
         leatherRoughnessMaps[leatherItem.id] = rough;
       }
 
