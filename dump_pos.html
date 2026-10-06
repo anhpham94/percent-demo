@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
+  <script>
+    const dracoLoader = new THREE.DRACOLoader();
+    dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/');
+    const loader = new THREE.GLTFLoader();
+    loader.setDRACOLoader(dracoLoader);
+    
+    loader.load('models/classic.glb', (gltf) => {
+        let output = "";
+        let first = true;
+        gltf.scene.traverse(c => {
+            if(c.isMesh && first) {
+                const box = new THREE.Box3().setFromObject(c);
+                const center = box.getCenter(new THREE.Vector3());
+                output += `MESH: ${c.name} | POS: ${c.position.x.toFixed(2)}, ${c.position.y.toFixed(2)}, ${c.position.z.toFixed(2)} | CENTER: ${center.x.toFixed(2)}, ${center.y.toFixed(2)}, ${center.z.toFixed(2)}\n`;
+                first = false;
+            }
+        });
+        document.body.innerHTML = `<pre id="res">${output}</pre>`;
+    });
+  </script>
+</body>
+</html>

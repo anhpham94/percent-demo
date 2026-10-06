@@ -321,10 +321,10 @@
                 // Chuẩn hóa vị trí model gốc
                 const box = new THREE.Box3().setFromObject(strapModel);
                 const center = box.getCenter(new THREE.Vector3());
-                strapModel.position.sub(center); 
+                // strapModel.position.sub(center); // Bỏ center đi để xem toạ độ gốc 
                 // Xoay cho dây nằm ngang ra dễ nhìn
-                strapModel.rotation.z = Math.PI / 2;
-                strapModel.rotation.y = Math.PI; // Ngửa lên
+                // strapModel.rotation.z = Math.PI / 2;
+                // strapModel.rotation.y = Math.PI; // Ngửa lên
                 
                 scene.add(strapModel);
 
@@ -390,8 +390,8 @@
             watchGroup = new THREE.Group();
             
             // Thông số mặt đồng hồ 40mm
-            const caseRadius = 2.0; 
-            const caseHeight = 0.5;
+            const caseRadius = 1.0; 
+            const caseHeight = 0.2;
             
             watchCaseMaterial = new THREE.MeshStandardMaterial({
                 color: 0xe0e0e0,
@@ -511,12 +511,20 @@
                 updateStitch();
             };
 
+            
             strapMaterials.forEach(m => {
-                m.map = tex;
-                m.normalMap = norm;
-                m.normalScale.set(1.2, 1.2);
+                if(m.name === 'DA') {
+                    m.map = tex;
+                    m.normalMap = norm;
+                    if(m.normalScale) m.normalScale.set(1.2, 1.2);
+                    m.color.setHex(0xffffff); // Use texture color
+                } else if(m.name === 'LOT') {
+                    m.color.setHex(0xe8ddc5); // Lining color
+                    m.map = null;
+                }
                 m.needsUpdate = true;
             });
+
 
             // 2. Cập nhật Khóa
             hardwareMaterials.forEach(m => {
