@@ -668,6 +668,7 @@
             <div class="size-pill active watchface-pill" onclick="setWatchFace('apple')">Apple</div>
             <div class="size-pill watchface-pill" onclick="setWatchFace('rolex')">Rolex</div>
             <div class="size-pill watchface-pill" onclick="setWatchFace('ugia')">Ugia</div>
+            <div class="size-pill watchface-pill" onclick="setWatchFace('chronograph')">Chronograph</div>
           </div>
 
           <div class="step-header">
@@ -795,7 +796,8 @@
     const WATCH_FACES = [
       { id: 'apple', name: 'Apple Watch Ultra', file: 'models/apple_watch_ultra_2.glb', scale: 0.5, px: 0, py: 0, pz: 0, rx: 0, ry: 0, rz: 0 },
       { id: 'rolex', name: 'Rolex', file: 'models/rolex.glb', scale: 1.5, px: 0, py: 0, pz: 0.5, rx: 0, ry: 0, rz: 0 },
-      { id: 'ugia', name: 'Ugia Watch', file: 'models/ugia_watch.glb', scale: 0.05, px: 0, py: 0, pz: 0.5, rx: Math.PI/2, ry: 0, rz: 0 }
+      { id: 'ugia', name: 'Ugia Watch', file: 'models/ugia_watch.glb', scale: 0.05, px: 0, py: 0, pz: 0.5, rx: Math.PI/2, ry: 0, rz: 0 },
+      { id: 'chronograph', name: 'Chronograph (Khronos)', file: 'models/ChronographWatch.glb', scale: 0.25, px: 0, py: 0, pz: 0.5, rx: Math.PI/2, ry: 0, rz: 0 }
     ];
 
     // Trạng thái cấu hình hiện tại
@@ -1192,19 +1194,6 @@
       const dial = new THREE.Mesh(dialGeo, dialMat);
       dial.position.z = 0.46;
       watchGroup.add(dial);
-
-      // Kim đồng hồ & Logo tối giản
-      const handGeo = new THREE.BoxGeometry(0.08, 1.8, 0.02);
-      const handMat = new THREE.MeshStandardMaterial({ color: 0xC29D59, metalness: 0.9 });
-      const minuteHand = new THREE.Mesh(handGeo, handMat);
-      minuteHand.position.set(0, 0.7, 0.48);
-      minuteHand.rotation.z = -0.5;
-      watchGroup.add(minuteHand);
-
-      const hourHand = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.2, 0.02), handMat);
-      hourHand.position.set(0.3, 0.4, 0.49);
-      hourHand.rotation.z = 1.2;
-      watchGroup.add(hourHand);
 
       // 4 chân Càng Lug giữ dây
       for (let side of [-1, 1]) {

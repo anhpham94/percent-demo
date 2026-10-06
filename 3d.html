@@ -1,484 +1,1592 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Percent 3D Bespoke Studio</title>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
-    <style>
-        :root {
-            --bg-color: #F6F0E5;
-            --text-main: #241813;
-            --accent: #9C5A2C;
-            --border: #E8DFD0;
-            --white: #FFFFFF;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Be Vietnam Pro', sans-serif; }
-        body { display: flex; height: 100vh; overflow: hidden; background: var(--bg-color); color: var(--text-main); }
-        
-        #canvas-container { flex: 1; position: relative; }
-        
-        #sidebar {
-            width: 400px; background: var(--white); border-left: 1px solid var(--border);
-            display: flex; flex-direction: column; z-index: 10;
-        }
-        .header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 15px; }
-        .logo { font-size: 24px; font-weight: 700; background: var(--text-main); color: var(--white); padding: 5px 10px; border-radius: 4px; }
-        .title h1 { font-size: 16px; font-weight: 700; letter-spacing: 1px; }
-        .title p { font-size: 12px; color: #666; font-style: italic; }
-        
-        .options-container { flex: 1; overflow-y: auto; padding: 20px; }
-        .step { margin-bottom: 30px; }
-        .step h3 { font-size: 13px; font-weight: 700; margin-bottom: 15px; text-transform: uppercase; display: flex; justify-content: space-between; }
-        .step h3 span { color: var(--accent); font-weight: 600; text-transform: none; }
-        
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        
-        .card { 
-            border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center;
-            cursor: pointer; transition: all 0.2s ease; background: #fff;
-        }
-        .card:hover { border-color: var(--accent); }
-        .card.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
-        
-        .swatch-img { width: 100%; height: 80px; object-fit: cover; border-radius: 4px; margin-bottom: 8px; background: #f0f0f0; }
-        .color-dot { width: 30px; height: 30px; border-radius: 50%; margin: 0 auto 8px auto; border: 1px solid #ddd; }
-        
-        .card-title { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
-        .card-price { font-size: 11px; color: var(--accent); }
-        
-        .footer { padding: 20px; border-top: 1px solid var(--border); background: var(--white); }
-        .total-price { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .total-price span:first-child { font-size: 14px; font-weight: 600; }
-        .total-price span:last-child { font-size: 24px; font-weight: 700; color: var(--text-main); }
-        .btn-order { width: 100%; background: var(--text-main); color: var(--white); border: none; padding: 15px; font-size: 14px; font-weight: 700; border-radius: 8px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; }
-        .btn-order:hover { background: #000; }
-        
-        /* Camera Controls */
-        .camera-controls { position: absolute; top: 20px; left: 20px; display: flex; gap: 10px; z-index: 5; }
-        .btn-cam { background: var(--white); border: 1px solid var(--border); padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 5px; }
-        .btn-cam.active { background: var(--text-main); color: var(--white); border-color: var(--text-main); }
-        
-        .watch-toggle { position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; z-index: 5; }
-        
-        #loading { position: absolute; inset: 0; background: var(--bg-color); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; transition: opacity 0.5s; }
-        .spinner { width: 40px; height: 40px; border: 3px solid rgba(0,0,0,0.1); border-top-color: var(--text-main); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        
-        @media (max-width: 900px) {
-            body { flex-direction: column; }
-            #sidebar { width: 100%; height: 50vh; border-left: none; border-top: 1px solid var(--border); }
-            #canvas-container { height: 50vh; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PERCENT 3D Bespoke Studio - Thiết Kế Dây Da Đồng Hồ Thủ Công</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+  
+  <!-- Three.js & OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    :root {
+      --pc-cream: #F6F0E5;
+      --pc-cream-light: #FAF7F2;
+      --pc-cream-card: #FFFFFF;
+      --pc-espresso: #241813;
+      --pc-cognac: #9C5A2C;
+      --pc-gold: #C29D59;
+      --pc-border: #E8DFD3;
+      --pc-text-muted: #7A6F68;
+      --pc-text-dark: #221A15;
+      --pc-shadow-sm: 0 2px 8px rgba(36, 24, 19, 0.06);
+      --pc-shadow-md: 0 8px 24px rgba(36, 24, 19, 0.08);
+      --pc-shadow-lg: 0 16px 40px rgba(36, 24, 19, 0.12);
+      --font-body: 'Be Vietnam Pro', -apple-system, sans-serif;
+      --font-serif: 'Playfair Display', Georgia, serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-body);
+      background-color: var(--pc-cream);
+      color: var(--pc-text-dark);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Header Brand */
+    header {
+      height: 60px;
+      background: rgba(246, 240, 229, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--pc-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 50;
+    }
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--pc-espresso);
+    }
+    .brand-wrap img {
+      height: 32px;
+      width: auto;
+      object-fit: contain;
+    }
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+    }
+    .brand-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .brand-sub {
+      font-size: 10px;
+      color: var(--pc-cognac);
+      font-style: italic;
+      letter-spacing: 0.5px;
+    }
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: rgba(156, 90, 44, 0.1);
+      color: var(--pc-cognac);
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--pc-cognac);
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.9); opacity: 0.7; }
+      50% { transform: scale(1.3); opacity: 1; }
+      100% { transform: scale(0.9); opacity: 0.7; }
+    }
+
+    /* Main Container Split */
+    .app-container {
+      margin-top: 60px;
+      display: flex;
+      height: calc(100vh - 60px);
+      width: 100vw;
+      position: relative;
+    }
+
+    /* 3D Viewport (Left) */
+    .viewport-container {
+      flex: 1;
+      height: 100%;
+      position: relative;
+      background: radial-gradient(circle at 50% 50%, #FAF6EE 0%, #ECE3D2 100%);
+      overflow: hidden;
+    }
+    #webgl-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: grab;
+    }
+    #webgl-canvas:active {
+      cursor: grabbing;
+    }
+
+    /* Viewport Floating Controls */
+    .viewport-overlay {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      pointer-events: none;
+    }
+    .camera-presets, .view-toggles {
+      display: flex;
+      gap: 8px;
+      pointer-events: auto;
+    }
+    .vp-btn {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--pc-border);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--pc-espresso);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: var(--pc-shadow-sm);
+      transition: all 0.2s ease;
+    }
+    .vp-btn:hover {
+      background: #FFFFFF;
+      border-color: var(--pc-cognac);
+      color: var(--pc-cognac);
+      transform: translateY(-1px);
+    }
+    .vp-btn.active {
+      background: var(--pc-espresso);
+      color: #FFFFFF;
+      border-color: var(--pc-espresso);
+    }
+
+    /* Floating Hint */
+    .hint-chip {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(36, 24, 19, 0.75);
+      backdrop-filter: blur(6px);
+      color: #FFFFFF;
+      font-size: 11px;
+      padding: 6px 16px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      pointer-events: none;
+      animation: fadeIn 0.8s ease;
+    }
+
+    /* Configurator Drawer / Sidebar (Right) */
+    .config-sidebar {
+      width: 440px;
+      height: 100%;
+      background: var(--pc-cream-card);
+      border-left: 1px solid var(--pc-border);
+      display: flex;
+      flex-direction: column;
+      box-shadow: -4px 0 20px rgba(36, 24, 19, 0.04);
+      z-index: 20;
+    }
+    .config-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    /* Section Styles */
+    .step-section {
+      margin-bottom: 28px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--pc-border);
+    }
+    .step-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 14px;
+    }
+    .step-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--pc-espresso);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .step-num {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--pc-cognac);
+      color: #FFFFFF;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .step-selected-val {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--pc-cognac);
+    }
+
+    /* Grid Options */
+    .option-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .leather-card {
+      border: 1.5px solid var(--pc-border);
+      border-radius: 10px;
+      padding: 8px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+      background: #FFFFFF;
+      position: relative;
+    }
+    .leather-card:hover {
+      border-color: var(--pc-cognac);
+      transform: translateY(-2px);
+      box-shadow: var(--pc-shadow-sm);
+    }
+    .leather-card.active {
+      border-color: var(--pc-cognac);
+      background: rgba(156, 90, 44, 0.04);
+      box-shadow: 0 0 0 1px var(--pc-cognac);
+    }
+    .leather-img-wrap {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 6px;
+      background: #F4EFE6;
+    }
+    .leather-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .leather-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--pc-espresso);
+      line-height: 1.3;
+    }
+    .leather-color-tag {
+      font-size: 10px;
+      color: var(--pc-text-muted);
+      margin-top: 2px;
+    }
+    .leather-price {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--pc-cognac);
+      margin-top: 2px;
+    }
+
+    /* Swatches for Stitch & Buckle */
+    .swatch-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .stitch-swatch {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--pc-border);
+      transition: all 0.2s ease;
+    }
+    .stitch-swatch:hover, .stitch-swatch.active {
+      border-color: var(--pc-cognac);
+      background: rgba(156, 90, 44, 0.05);
+    }
+    .stitch-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(0,0,0,0.15);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+    }
+    .stitch-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--pc-espresso);
+    }
+
+    /* Buckle Cards */
+    .buckle-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .buckle-card {
+      border: 1px solid var(--pc-border);
+      border-radius: 8px;
+      padding: 8px 4px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .buckle-card:hover, .buckle-card.active {
+      border-color: var(--pc-cognac);
+      background: rgba(156, 90, 44, 0.05);
+    }
+    .buckle-metal-pill {
+      width: 24px;
+      height: 12px;
+      border-radius: 6px;
+      margin: 0 auto 6px auto;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+    .buckle-name {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--pc-espresso);
+    }
+
+    /* Size Selector */
+    .pill-group {
+      display: flex;
+      gap: 8px;
+    }
+    .size-pill {
+      flex: 1;
+      padding: 8px;
+      text-align: center;
+      border: 1px solid var(--pc-border);
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .size-pill:hover, .size-pill.active {
+      border-color: var(--pc-cognac);
+      background: var(--pc-espresso);
+      color: #FFFFFF;
+    }
+
+    /* Engraving Input */
+    .engrave-input-wrap {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .engrave-input {
+      flex: 1;
+      border: 1.5px solid var(--pc-border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      outline: none;
+      transition: all 0.2s ease;
+      background: #FFFFFF;
+      color: var(--pc-espresso);
+    }
+    .engrave-input:focus {
+      border-color: var(--pc-cognac);
+      box-shadow: 0 0 0 2px rgba(156, 90, 44, 0.15);
+    }
+    .engrave-hint {
+      font-size: 11px;
+      color: var(--pc-text-muted);
+      margin-top: 6px;
+      font-style: italic;
+    }
+
+    /* Bottom Action Bar */
+    .config-footer {
+      padding: 18px 24px;
+      background: #FFFFFF;
+      border-top: 1px solid var(--pc-border);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 -4px 16px rgba(36, 24, 19, 0.05);
+    }
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .price-label {
+      font-size: 12px;
+      color: var(--pc-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .price-amount {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--pc-cognac);
+      font-family: var(--font-serif);
+    }
+    .action-btn-row {
+      display: flex;
+      gap: 10px;
+    }
+    .btn-secondary {
+      flex: 1;
+      padding: 12px;
+      border: 1px solid var(--pc-border);
+      border-radius: 8px;
+      background: #FFFFFF;
+      color: var(--pc-espresso);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover {
+      background: var(--pc-cream);
+      border-color: var(--pc-cognac);
+    }
+    .btn-primary {
+      flex: 2;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background: var(--pc-espresso);
+      color: #FFFFFF;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(36, 24, 19, 0.2);
+    }
+    .btn-primary:hover {
+      background: var(--pc-cognac);
+      transform: translateY(-1px);
+    }
+
+    /* Modal Checkout */
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(36, 24, 19, 0.6);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+    }
+    .modal-box {
+      width: 100%;
+      max-width: 480px;
+      background: #FFFFFF;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: var(--pc-shadow-lg);
+      position: relative;
+      animation: scaleUp 0.3s ease;
+    }
+    @keyframes scaleUp {
+      from { transform: scale(0.92); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .modal-close {
+      position: absolute;
+      top: 16px; right: 16px;
+      background: #F4EFE6;
+      border: none;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--pc-espresso);
+    }
+    .modal-title {
+      font-size: 18px;
+      font-family: var(--font-serif);
+      color: var(--pc-espresso);
+      margin-bottom: 6px;
+    }
+    .modal-desc {
+      font-size: 12px;
+      color: var(--pc-text-muted);
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .summary-card {
+      background: var(--pc-cream);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 20px;
+      font-size: 12px;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .summary-row:last-child { margin-bottom: 0; }
+    .summary-label { color: var(--pc-text-muted); }
+    .summary-val { font-weight: 600; color: var(--pc-espresso); }
+
+    /* Mobile Responsive */
+    @media (max-width: 900px) {
+      .app-container {
+        flex-direction: column;
+        height: auto;
+      }
+      .viewport-container {
+        height: 52vh;
+        width: 100vw;
+      }
+      .config-sidebar {
+        width: 100vw;
+        height: auto;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div id="loading">
-        <div class="spinner"></div>
-        <div id="loading-text" style="font-weight:600;">Đang nạp 3D Studio... 0%</div>
+
+  <!-- Header -->
+  <header>
+    <a class="brand-wrap" href="https://shopdongho.com/percent/">
+      <img src="img/logo.png" alt="Percent Logo">
+      <div class="brand-text">
+        <span class="brand-title">PERCENT BESPOKE</span>
+        <span class="brand-sub">Atelier Chế Tác Thủ Công 18 Bước</span>
+      </div>
+    </a>
+    <div class="header-badge">
+      <span class="pulse-dot"></span>
+      <span>3D Studio Live</span>
+    </div>
+  </header>
+
+  <!-- Main View -->
+  <div class="app-container">
+    
+    <!-- Left: 3D Canvas -->
+    <div class="viewport-container">
+      <canvas id="webgl-canvas"></canvas>
+
+      <!-- Overlay Floating Bar -->
+      <div class="viewport-overlay">
+        <div class="camera-presets">
+          <button class="vp-btn active" onclick="setCameraView('overview')">📐 Toàn Cảnh</button>
+          <button class="vp-btn" onclick="setCameraView('buckle')">🔒 Khóa & Đỉa</button>
+          <button class="vp-btn" onclick="setCameraView('tail')">✂ Mũi Dây</button>
+          <button class="vp-btn" onclick="setCameraView('lining')">🔄 Lót Zermatt</button>
+        </div>
+        <div class="view-toggles">
+          <button class="vp-btn" id="btn-toggle-watch" onclick="toggleWatchCase()">⌚ Ướm Đồng Hồ: BẬT</button>
+          <button class="vp-btn" id="btn-toggle-rotate" onclick="toggleAutoRotate()">🔄 Tự Xoay</button>
+        </div>
+      </div>
+
+      <div class="hint-chip">
+        <span>👆 Giữ chuột/chạm để xoay 360° & cuộn để phóng to</span>
+      </div>
     </div>
 
-    <div id="canvas-container">
-        <div class="camera-controls">
-            <button class="btn-cam active" onclick="setCamera('front', this)">🚀 Toàn cảnh</button>
-            <button class="btn-cam" onclick="setCamera('top', this)">⬆️ Chụp thẳng</button>
-            <button class="btn-cam" onclick="setCamera('side', this)">🔍 Xem độn phồng</button>
+    <!-- Right: Configurator Sidebar -->
+    <div class="config-sidebar">
+      <div class="config-scroll">
+
+        <!-- Step 1: Chọn Da Thật Percent -->
+        <div class="step-section">
+          <div class="step-header">
+            <span class="step-title"><span class="step-num">1</span> Chất Liệu & Màu Da</span>
+            <span class="step-selected-val" id="val-leather">Agon Soil (Nâu đất Ý)</span>
+          </div>
+          <div class="option-grid" id="leather-grid">
+            <!-- Rendered by JS -->
+          </div>
         </div>
-        <div class="watch-toggle">
-            <button class="btn-cam active" id="btn-watch" onclick="toggleWatch()">⌚ Mặt đồng hồ: BẬT</button>
+
+        <!-- Step 2: Màu Chỉ May Thủ Công -->
+        <div class="step-section">
+          <div class="step-header">
+            <span class="step-title"><span class="step-num">2</span> Đường Chỉ May (Saddle Stitch)</span>
+            <span class="step-selected-val" id="val-stitch">Chỉ kem vintage</span>
+          </div>
+          <div class="swatch-group" id="stitch-group">
+            <!-- Rendered by JS -->
+          </div>
         </div>
+
+        <!-- Step 3: Khóa & Kim Loại -->
+        <div class="step-section">
+          <!-- Watch face toggle -->
+          <div class="step-header" style="margin-bottom: 10px;">
+            <span class="step-title" style="font-size: 11px;">Mặt đồng hồ ướm thử</span>
+            <span class="step-selected-val" id="val-watchface">Apple Watch Ultra</span>
+          </div>
+          <div class="pill-group" style="margin-bottom: 20px;">
+            <div class="size-pill active watchface-pill" onclick="setWatchFace('apple')">Apple</div>
+            <div class="size-pill watchface-pill" onclick="setWatchFace('rolex')">Rolex</div>
+            <div class="size-pill watchface-pill" onclick="setWatchFace('ugia')">Ugia</div>
+            <div class="size-pill watchface-pill" onclick="setWatchFace('chronograph')">Chronograph</div>
+          </div>
+
+          <div class="step-header">
+            <span class="step-title"><span class="step-num">3</span> Khóa & Màu Kim Loại</span>
+            <span class="step-selected-val" id="val-buckle">Bạc Inox (Khóa kim)</span>
+          </div>
+          <div style="margin-bottom: 12px;">
+            <div class="pill-group" style="margin-bottom: 10px;">
+              <div class="size-pill active" onclick="setBuckleType('tang', this)">Khóa Kim Chuẩn</div>
+              <div class="size-pill" onclick="setBuckleType('deployant', this)">Khóa Bướm (+150k)</div>
+            </div>
+            <div class="buckle-grid" id="buckle-grid">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4: Kích Thước & Đo Tay -->
+        <div class="step-section">
+          <div class="step-header">
+            <span class="step-title"><span class="step-num">4</span> Kích Thước Bản Dây (Lug)</span>
+            <span class="step-selected-val" id="val-lug">20 - 18 mm</span>
+          </div>
+          <div class="pill-group" style="margin-bottom: 12px;">
+            <div class="size-pill" onclick="setLugSize('18 - 16 mm', this)">18 - 16 mm</div>
+            <div class="size-pill active" onclick="setLugSize('20 - 18 mm', this)">20 - 18 mm</div>
+            <div class="size-pill" onclick="setLugSize('22 - 20 mm', this)">22 - 20 mm</div>
+          </div>
+          <div class="step-header" style="margin-top: 14px;">
+            <span class="step-title" style="font-size: 11px;">Chu vi cổ tay</span>
+            <span class="step-selected-val" id="val-wrist">16.5 cm (Chuẩn 115/75mm)</span>
+          </div>
+          <div class="pill-group">
+            <div class="size-pill" onclick="setWristSize('15.0 cm (Nhỏ 105/65mm)', this)">15 cm (Nhỏ)</div>
+            <div class="size-pill active" onclick="setWristSize('16.5 cm (Chuẩn 115/75mm)', this)">16.5 cm (Chuẩn)</div>
+            <div class="size-pill" onclick="setWristSize('18.0 cm (Lớn 125/80mm)', this)">18 cm (Lớn)</div>
+          </div>
+        </div>
+
+        <!-- Step 5: Khắc Tên Laser -->
+        <div class="step-section" style="border-bottom: none;">
+          <div class="step-header">
+            <span class="step-title"><span class="step-num">5</span> Cá Nhân Hóa (Khắc Tên Laser)</span>
+            <span class="step-selected-val">Miễn phí</span>
+          </div>
+          <div class="engrave-input-wrap">
+            <input type="text" id="engrave-text" class="engrave-input" placeholder="NHẬP TÊN HOẶC NGÀY SINH (VD: TUAN ANH)" maxlength="16" oninput="updateEngraving(this.value)">
+          </div>
+          <p class="engrave-hint">Chữ sẽ được khắc dập chìm laser tinh xảo lên mặt lót Zermatt bên trong dây.</p>
+        </div>
+
+      </div>
+
+      <!-- Action Footer -->
+      <div class="config-footer">
+        <div class="price-row">
+          <div>
+            <span class="price-label">Tổng Chi Phí May Đo</span>
+            <div style="font-size: 10px; color: #16a34a; font-weight: 600; margin-top: 2px;">✔ Bảo hành da & chỉ 12 tháng</div>
+          </div>
+          <span class="price-amount" id="total-price">600.000₫</span>
+        </div>
+        <div class="action-btn-row">
+          <button class="btn-secondary" onclick="captureSnapshot()">
+            📸 Lưu Ảnh Phối
+          </button>
+          <button class="btn-primary" onclick="openCheckoutModal()">
+            ✨ ĐẶT MAY THỦ CÔNG
+          </button>
+        </div>
+      </div>
     </div>
 
-    <div id="sidebar">
-        <div class="header">
-            <div class="logo">%</div>
-            <div class="title">
-                <h1>PERCENT BESPOKE</h1>
-                <p>Mô Phỏng 3D Khớp Khối Chuẩn Xác</p>
-            </div>
-        </div>
-        
-        <div class="options-container">
-            <div class="step">
-                <h3 id="lbl-leather">1. CHẤT LIỆU & MÀU DA <span>Agon Soil</span></h3>
-                <div class="grid-2" id="leather-grid"></div>
-            </div>
-            
-            <div class="step">
-                <h3 id="lbl-stitch">2. CHỈ MAY SADDLE STITCH <span>Tiệp màu</span></h3>
-                <div class="grid-4" id="stitch-grid"></div>
-            </div>
-            
-            <div class="step">
-                <h3 id="lbl-hardware">3. KHÓA KIM LOẠI <span>Bạc Inox</span></h3>
-                <div class="grid-4" id="hardware-grid"></div>
-            </div>
-            
-            <div class="step" id="watch-options">
-                <h3 id="lbl-watchcase">4. ƯỚM THỬ VỚI MẶT ĐỒNG HỒ <span>Apple Watch Ultra</span></h3>
-                <div class="grid-3" id="watchface-grid"></div>
-            </div>
-        </div>
-        
-        <div class="footer">
-            <div class="total-price">
-                <span>TỔNG CHI PHÍ</span>
-                <span id="price-display">650.000₫</span>
-            </div>
-            <button class="btn-order" onclick="alert('Tính năng đặt hàng đang được cập nhật!')">✨ ĐẶT MAY THỦ CÔNG</button>
-        </div>
+  </div>
+
+  <!-- Modal Đặt Hàng -->
+  <div class="modal-backdrop" id="checkout-modal">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeCheckoutModal()">✕</button>
+      <h3 class="modal-title">Xác Nhận Đặt May Dây Da Percent</h3>
+      <p class="modal-desc">Đơn hàng may đo thủ công được chuyển thẳng về xưởng chế tác 18 bước của Percent. Nghệ nhân sẽ may đo theo đúng thông số 3D bạn vừa phối.</p>
+      
+      <div class="summary-card" id="summary-content">
+        <!-- JS fill -->
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button class="btn-primary" style="flex: 1;" onclick="sendOrderZalo()">
+          💬 Gửi Đơn Qua Zalo Xưởng
+        </button>
+        <button class="btn-secondary" style="flex: 1;" onclick="sendOrderShopDongHo()">
+          🛒 Thêm Vào Giỏ Hàng
+        </button>
+      </div>
     </div>
+  </div>
 
-    <script>
-        const leathers = [
-            { id: 'agon', name: 'Agon', desc: 'Nâu đất Soil', price: 650000, tex: 'img/tex_p01.jpg', norm: 'img/norm_p01.jpg' },
-            { id: 'karl', name: 'Karl', desc: 'Nâu Sepia', price: 650000, tex: 'img/tex_p04.jpg', norm: 'img/norm_p04.jpg' },
-            { id: 'bruno', name: 'Bruno', desc: 'Vàng bò Gold', price: 650000, tex: 'img/tex_p05.jpg', norm: 'img/norm_p05.jpg' },
-            { id: 'cosimo', name: 'Cosimo', desc: 'Xanh Navy Ý', price: 650000, tex: 'img/tex_p08.jpg', norm: 'img/norm_p08.jpg' },
-            { id: 'matteo', name: 'Matteo', desc: 'Đỏ rượu Wine', price: 650000, tex: 'img/tex_p10.jpg', norm: 'img/norm_p10.jpg' },
-            { id: 'knut', name: 'Knut', desc: 'Đen Cổ Điển', price: 650000, tex: 'img/tex_p03.jpg', norm: 'img/norm_p03.jpg' }
-        ];
+  <!-- 3D Engine Script -->
+  <script>
+    // --- DATABASE SẢN PHẨM PERCENT CÓ SẴN (TEXTURE & NORMAL MAP TỰ ĐỘNG BÓC TÁCH TỪ ẢNH THẬT) ---
+    const LEATHER_CATALOG = [
+      { id: 'agon-soil', name: 'Percent Agon', color: 'Nâu đất Soil', price: 600000, img: 'img/p01.jpg', tex: 'img/tex_p01.jpg', norm: 'img/norm_p01.jpg', hex: '#634E3F', roughness: 0.55 },
+      { id: 'karl-sepia', name: 'Percent Karl', color: 'Nâu hạt dẻ Sepia', price: 580000, img: 'img/p04.jpg', tex: 'img/tex_p04.jpg', norm: 'img/norm_p04.jpg', hex: '#5E4842', roughness: 0.50 },
+      { id: 'bruno-gold', name: 'Percent Bruno', color: 'Vàng bò Gold', price: 580000, img: 'img/p05.jpg', tex: 'img/tex_p05.jpg', norm: 'img/norm_p05.jpg', hex: '#876527', roughness: 0.60 },
+      { id: 'cosimo-navy', name: 'Percent Cosimo', color: 'Xanh Navy Ý', price: 580000, img: 'img/p08.jpg', tex: 'img/tex_p08.jpg', norm: 'img/norm_p08.jpg', hex: '#1C252B', roughness: 0.45 },
+      { id: 'matteo-wine', name: 'Percent Matteo', color: 'Đỏ rượu Wine Red', price: 580000, img: 'img/p10.jpg', tex: 'img/tex_p10.jpg', norm: 'img/norm_p10.jpg', hex: '#522421', roughness: 0.50 },
+      { id: 'knut-black', name: 'Percent Knut', color: 'Đen Cổ Điển', price: 520000, img: 'img/p03.jpg', tex: 'img/tex_p03.jpg', norm: 'img/norm_p03.jpg', hex: '#2A2C2B', roughness: 0.55 },
+    ];
 
-        const stitches = [
-            { id: 'tiep', name: 'Tiệp màu da', color: 'match' },
-            { id: 'trang', name: 'Trắng tinh', color: '#ffffff' },
-            { id: 'kem', name: 'Kem Vintage', color: '#e8ddc5' },
-            { id: 'den', name: 'Đen Tuyền', color: '#111111' },
-            { id: 'vang', name: 'Vàng Hermes', color: '#dca654' },
-            { id: 'do', name: 'Đỏ Cherry', color: '#b01c1c' }
-        ];
+    const STITCH_COLORS = [
+      { id: 'cream', name: 'Chỉ kem vintage', hex: '#EBE2D3' },
+      { id: 'matching', name: 'Chỉ tiệp màu da', hex: '#442f29' },
+      { id: 'white', name: 'Chỉ trắng thanh lịch', hex: '#FFFFFF' },
+      { id: 'black', name: 'Chỉ đen mạnh mẽ', hex: '#1C1C1C' },
+      { id: 'gold', name: 'Chỉ vàng bò', hex: '#D29B4A' }
+    ];
 
-        const hardwares = [
-            { id: 'silver', name: 'Bạc Inox', color: '#eeeeee', metal: 1, rough: 0.2 },
-            { id: 'gold', name: 'Vàng Gold', color: '#d4af37', metal: 1, rough: 0.2 },
-            { id: 'rose', name: 'Vàng Hồng', color: '#b76e79', metal: 1, rough: 0.2 },
-            { id: 'black', name: 'Đen PVD', color: '#222222', metal: 0.8, rough: 0.4 }
-        ];
+    const BUCKLE_METALS = [
+      { id: 'silver', name: 'Bạc Inox', hex: '#D8D8D8', metalness: 0.95, roughness: 0.15 },
+      { id: 'gold', name: 'Vàng Gold', hex: '#E5B864', metalness: 0.95, roughness: 0.15 },
+      { id: 'rosegold', name: 'Vàng Hồng', hex: '#E2A995', metalness: 0.92, roughness: 0.18 },
+      { id: 'black', name: 'Đen PVD', hex: '#242424', metalness: 0.85, roughness: 0.25 }
+    ];
+
+    const WATCH_FACES = [
+      { id: 'apple', name: 'Apple Watch Ultra', file: 'models/apple_watch_ultra_2.glb', scale: 0.5, px: 0, py: 0, pz: 0, rx: 0, ry: 0, rz: 0 },
+      { id: 'rolex', name: 'Rolex', file: 'models/rolex.glb', scale: 1.5, px: 0, py: 0, pz: 0.5, rx: 0, ry: 0, rz: 0 },
+      { id: 'ugia', name: 'Ugia Watch', file: 'models/ugia_watch.glb', scale: 0.05, px: 0, py: 0, pz: 0.5, rx: Math.PI/2, ry: 0, rz: 0 },
+      { id: 'chronograph', name: 'Chronograph (Khronos)', file: 'models/ChronographWatch.glb', scale: 0.25, px: 0, py: 0, pz: 0.5, rx: Math.PI/2, ry: 0, rz: 0 }
+    ];
+
+    // Trạng thái cấu hình hiện tại
+    const currentConfig = {
+      leather: LEATHER_CATALOG[0],
+      stitch: STITCH_COLORS[0],
+      buckleMetal: BUCKLE_METALS[0],
+      buckleType: 'tang', // tang or deployant
+      lugSize: '20 - 18 mm',
+      wristSize: '16.5 cm (Chuẩn 115/75mm)',
+      engraving: '',
+      showWatch: true,
+      watchFace: WATCH_FACES[0],
+      autoRotate: false
+    };
+
+    // --- THREE.JS SCENE SETUP ---
+    let scene, camera, renderer, controls;
+    let strapModel = null;
+    let strapGroup = new THREE.Group();
+    let strapMaterials = [];
+    let stitchMaterials = [];
+    let hardwareMaterials = [];
+    let watchGroup = null;
+    let loadedWatches = {};
+    let textureLoader;
+    let leatherTextures = {};
+    let leatherNormalMaps = {};
+    let currentLeatherColor = new THREE.Color();
+    
+    let engraveTextureCanvas, engraveTextureContext, engraveTexture;
+
+    const gltfLoader = new THREE.GLTFLoader();
+    const dracoLoader = new THREE.DRACOLoader();
+    dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/');
+    gltfLoader.setDRACOLoader(dracoLoader);
+
+    function init3D() {
+      const container = document.querySelector('.viewport-container');
+      const canvas = document.getElementById('webgl-canvas');
+
+      scene = new THREE.Scene();
+      scene.background = null;
+
+      camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
+      camera.position.set(0, 18, 28);
+
+      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.25;
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxDistance = 55;
+      controls.minDistance = 12;
+      controls.maxPolarAngle = Math.PI / 2 + 0.1;
+      controls.target.set(0, 0, 0);
+
+      // --- STUDIO LIGHTING SYSTEM ---
+      const ambientLight = new THREE.AmbientLight(0xfff8f0, 0.9);
+      scene.add(ambientLight);
+
+      const keyLight = new THREE.DirectionalLight(0xffffff, 1.3);
+      keyLight.position.set(15, 25, 20);
+      keyLight.castShadow = true;
+      keyLight.shadow.mapSize.width = 2048;
+      keyLight.shadow.mapSize.height = 2048;
+      scene.add(keyLight);
+
+      const fillLight = new THREE.DirectionalLight(0xf5ebe0, 0.8);
+      fillLight.position.set(-20, 15, -15);
+      scene.add(fillLight);
+
+      const rimLight = new THREE.DirectionalLight(0xfff0dd, 0.6);
+      rimLight.position.set(0, -10, 15);
+      scene.add(rimLight);
+
+      // Sàn bóng đổ mờ ảo
+      const floorGeo = new THREE.PlaneGeometry(100, 100);
+      const floorMat = new THREE.ShadowMaterial({ opacity: 0.15 });
+      const floor = new THREE.Mesh(floorGeo, floorMat);
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.y = -6;
+      floor.receiveShadow = true;
+      scene.add(floor);
+
+      // Texture loader
+      textureLoader = new THREE.TextureLoader();
+
+      // Canvas động cho chữ khắc Laser
+      initEngraveCanvas();
+
+      scene.add(strapGroup);
+
+      // Tải mô hình dây da
+      gltfLoader.load('models/classic.glb', (gltf) => {
+          strapModel = gltf.scene;
+          const box = new THREE.Box3().setFromObject(strapModel);
+          const center = box.getCenter(new THREE.Vector3());
+          strapModel.position.sub(center); 
+          strapModel.rotation.z = Math.PI / 2;
+          strapModel.rotation.x = Math.PI / 2;
+          
+          strapGroup.add(strapModel);
+
+          strapModel.traverse((child) => {
+              if (child.isMesh) {
+                  child.castShadow = true;
+                  child.receiveShadow = true;
+                  const mName = child.name.toLowerCase();
+                  if (mName.includes('leather') || mName.includes('padded') || mName.includes('tip') || mName.includes('keeper')) {
+                      const newMat = new THREE.MeshStandardMaterial({ roughness: 0.65, metalness: 0.05, color: 0xffffff });
+                      child.material = newMat;
+                      strapMaterials.push(newMat);
+                  } else if (mName.includes('stitch')) {
+                      const newMat = new THREE.MeshStandardMaterial({ roughness: 0.9, metalness: 0, color: 0xe8ddc5 });
+                      child.material = newMat;
+                      stitchMaterials.push(newMat);
+                  } else if (mName.includes('buckle') || mName.includes('wire')) {
+                      const newMat = new THREE.MeshStandardMaterial({ roughness: 0.2, metalness: 1.0, color: 0xeeeeee });
+                      child.material = newMat;
+                      hardwareMaterials.push(newMat);
+                  }
+              }
+          });
+
+          update3D();
+          if(currentConfig.showWatch) {
+              loadWatchFace(currentConfig.watchFace);
+          }
+      });
+
+      // Render loop
+      animate();
+
+      window.addEventListener('resize', onWindowResize);
+    }
+
+    // --- CANVAS TỰ ĐỘNG VẼ CHỮ KHẮC LASER 3D ---
+    function initEngraveCanvas() {
+      engraveTextureCanvas = document.createElement('canvas');
+      engraveTextureCanvas.width = 512;
+      engraveTextureCanvas.height = 128;
+      engraveTextureContext = engraveTextureCanvas.getContext('2d');
+      engraveTexture = new THREE.CanvasTexture(engraveTextureCanvas);
+      updateEngraveTextureText('');
+    }
+
+    function updateEngraveTextureText(text) {
+      const ctx = engraveTextureContext;
+      ctx.fillStyle = '#C8B293'; // Màu da lót Zermatt
+      ctx.fillRect(0, 0, 512, 128);
+
+      if (text) {
+        ctx.fillStyle = '#6E5539'; // Dập chìm màu sẫm
+        ctx.font = 'bold 36px "Be Vietnam Pro", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.letterSpacing = '4px';
+        ctx.fillText(text.toUpperCase(), 256, 64);
+      }
+      engraveTexture.needsUpdate = true;
+    }
+
+    // --- DỰNG PROCEDURAL 3D MESH DÂY DA & KHÓA (KHÔNG CẦN BLENDER) ---
+    function buildWatchAndStrap() {
+      strapGroup = new THREE.Group();
+      scene.add(strapGroup);
+
+      // Tạo vật liệu da ban đầu
+      const leatherMaterial = createLeatherMaterial(currentConfig.leather);
+
+      // 1. DÂY NGẮN (Short Strap - Buckle Side)
+      const shortCurve = new THREE.CubicBezierCurve3(
+        new THREE.Vector3(0, 0, 3.8),     // Chân lug đồng hồ
+        new THREE.Vector3(0, -0.8, 6.5),  // Bo cong theo cổ tay
+        new THREE.Vector3(0, -2.5, 9.5),  // Thân giữa
+        new THREE.Vector3(0, -4.5, 12.0)  // Chân khóa
+      );
+      shortStrapMesh = createCurvedStrapMesh(shortCurve, 2.0, 1.8, 0.32, leatherMaterial);
+      shortStrapMesh.castShadow = true;
+      strapGroup.add(shortStrapMesh);
+
+      // 2. DÂY DÀI (Long Strap - Tail Side)
+      const longCurve = new THREE.CubicBezierCurve3(
+        new THREE.Vector3(0, 0, -3.8),     // Chân lug trên
+        new THREE.Vector3(0, -0.8, -7.5),  // Bo cong ôm tay
+        new THREE.Vector3(0, -3.2, -12.0), // Thân có lỗ
+        new THREE.Vector3(0, -5.8, -16.5)  // Đuôi nhọn
+      );
+      longStrapMesh = createCurvedStrapMesh(longCurve, 2.0, 1.75, 0.32, leatherMaterial, true);
+      longStrapMesh.castShadow = true;
+      strapGroup.add(longStrapMesh);
+
+      // 3. ĐỤC 7 LỖ KIM TRÊN DÂY DÀI
+      createStrapHoles(strapGroup);
+
+      // 4. ĐƯỜNG CHỈ MAY SADDLE STITCH VIỀN
+      createStitching(shortCurve, longCurve);
+
+      // 5. BỘ KHÓA KIM & ĐỈA DA
+      buildBuckleAndKeepers(strapGroup, shortCurve.getPoint(1));
+
+      // 6. MẶT ĐỒNG HỒ MẪU (Watch Case)
+      buildWatchCase();
+
+      // Cập nhật góc ban đầu
+      strapGroup.rotation.y = Math.PI / 4;
+    }
+
+    // Hàm tạo thân dây uốn cong mượt mà theo đường cong Bezier
+    function createCurvedStrapMesh(curve, widthStart, widthEnd, thickness, material, isPointed = false) {
+      const segments = 36;
+      const points = curve.getPoints(segments);
+      const geom = new THREE.BufferGeometry();
+
+      const vertices = [];
+      const normals = [];
+      const uvs = [];
+      const indices = [];
+
+      for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
+        const p = points[i];
+        const w = (widthStart + (widthEnd - widthStart) * t) / 2;
         
-        const watchFaces = [
-            { id: 'none', name: 'Không Mặt', thumb: 'img/tex_p03.jpg' },
-            { id: 'apple', name: 'Apple Watch Ultra', thumb: 'img/tex_p08.jpg', file: 'models/apple_watch_ultra_2.glb', scale: 0.5, px: 0, py: 0, pz: 0, rx: 0, ry: 0, rz: 0 },
-            { id: 'rolex', name: 'Rolex', thumb: 'img/tex_p05.jpg', file: 'models/rolex.glb', scale: 1.5, px: 0, py: 0, pz: 0.5, rx: 0, ry: 0, rz: 0 },
-            { id: 'ugia', name: 'Ugia Watch', thumb: 'img/tex_p10.jpg', file: 'models/ugia_watch.glb', scale: 0.05, px: 0, py: 0, pz: 0.5, rx: Math.PI/2, ry: 0, rz: 0 }
-        ];
+        // Đỉnh đuôi nhọn ở cuối nếu là dây dài
+        const currentW = (isPointed && i === segments) ? 0.05 : w;
 
-        let state = {
-            leather: leathers[0],
-            stitch: stitches[0],
-            hardware: hardwares[0],
-            watchFace: watchFaces[1],
-            showWatch: true
+        // Vector tiếp tuyến & pháp tuyến
+        const tangent = curve.getTangent(t).normalize();
+        const normal = new THREE.Vector3(0, 1, 0);
+        const side = new THREE.Vector3().crossVectors(tangent, normal).normalize();
+
+        // 4 đỉnh mặt cắt (Top-Left, Top-Right, Bottom-Left, Bottom-Right)
+        const tl = p.clone().addScaledVector(side, -currentW).addScaledVector(normal, thickness / 2);
+        const tr = p.clone().addScaledVector(side, currentW).addScaledVector(normal, thickness / 2);
+        const bl = p.clone().addScaledVector(side, -currentW).addScaledVector(normal, -thickness / 2);
+        const br = p.clone().addScaledVector(side, currentW).addScaledVector(normal, -thickness / 2);
+
+        vertices.push(tl.x, tl.y, tl.z,  tr.x, tr.y, tr.z,  bl.x, bl.y, bl.z,  br.x, br.y, br.z);
+        normals.push(0, 1, 0,  0, 1, 0,  0, -1, 0,  0, -1, 0);
+        uvs.push(0, t,  1, t,  0, t,  1, t);
+
+        if (i < segments) {
+          const base = i * 4;
+          // Mặt trên
+          indices.push(base, base + 1, base + 5,  base, base + 5, base + 4);
+          // Mặt dưới
+          indices.push(base + 2, base + 6, base + 7,  base + 2, base + 7, base + 3);
+          // Viền trái (Sơn cạnh)
+          indices.push(base, base + 4, base + 6,  base, base + 6, base + 2);
+          // Viền phải (Sơn cạnh)
+          indices.push(base + 1, base + 3, base + 7,  base + 1, base + 7, base + 5);
+        }
+      }
+
+      geom.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+      geom.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+      geom.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+      geom.setIndex(indices);
+      geom.computeVertexNormals();
+
+      return new THREE.Mesh(geom, material);
+    }
+
+    // Đục 7 lỗ xỏ kim tinh xảo
+    function createStrapHoles(group) {
+      const holeMaterial = new THREE.MeshBasicMaterial({ color: 0x1A1410 });
+      for (let i = 0; i < 7; i++) {
+        const holeGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.38, 16);
+        const hole = new THREE.Mesh(holeGeo, holeMaterial);
+        // Định vị dọc theo đuôi dây dài
+        hole.position.set(0, -2.5 - i * 0.42, -10.5 - i * 0.85);
+        hole.rotation.x = 0.3;
+        group.add(hole);
+      }
+    }
+
+    // Dựng đường chỉ khâu tay nổi 3D
+    function createStitching(shortCurve, longCurve) {
+      const stitchMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(currentConfig.stitch.hex),
+        roughness: 0.8,
+        metalness: 0.05
+      });
+
+      function addStitchLine(curve, sideOffset, widthStart, widthEnd) {
+        const count = 28;
+        for (let i = 2; i < count; i++) {
+          const t = i / count;
+          const p = curve.getPoint(t);
+          const tangent = curve.getTangent(t).normalize();
+          const normal = new THREE.Vector3(0, 1, 0);
+          const side = new THREE.Vector3().crossVectors(tangent, normal).normalize();
+          const w = (widthStart + (widthEnd - widthStart) * t) / 2 - 0.14;
+
+          const stitchGeo = new THREE.BoxGeometry(0.04, 0.035, 0.16);
+          const stitch = new THREE.Mesh(stitchGeo, stitchMat);
+          
+          const pos = p.clone().addScaledVector(side, sideOffset * w).addScaledVector(normal, 0.17);
+          stitch.position.copy(pos);
+          stitch.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), tangent);
+          stitch.rotation.y += (i % 2 === 0 ? 0.15 : -0.15); // Góc đan chỉ chéo thủ công
+          strapGroup.add(stitch);
+          stitchMeshes.push(stitch);
+        }
+      }
+
+      addStitchLine(shortCurve, -1, 2.0, 1.8);
+      addStitchLine(shortCurve, 1, 2.0, 1.8);
+      addStitchLine(longCurve, -1, 2.0, 1.75);
+      addStitchLine(longCurve, 1, 2.0, 1.75);
+    }
+
+    // Dựng Khóa kim & Đỉa da thật
+    function buildBuckleAndKeepers(group, bucklePos) {
+      buckleGroup = new THREE.Group();
+
+      const metalMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(currentConfig.buckleMetal.hex),
+        metalness: currentConfig.buckleMetal.metalness,
+        roughness: currentConfig.buckleMetal.roughness
+      });
+
+      // 1. Khung khóa chữ U
+      const frameGeo = new THREE.TorusGeometry(0.95, 0.09, 12, 24, Math.PI);
+      const frame = new THREE.Mesh(frameGeo, metalMat);
+      frame.rotation.x = Math.PI / 2;
+      frame.position.set(0, 0, 0.3);
+      buckleGroup.add(frame);
+
+      // Chốt ngang
+      const barGeo = new THREE.CylinderGeometry(0.06, 0.06, 1.9, 16);
+      const bar = new THREE.Mesh(barGeo, metalMat);
+      bar.rotation.z = Math.PI / 2;
+      buckleGroup.add(bar);
+
+      // Kim khóa
+      const tongueGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.1, 12);
+      const tongue = new THREE.Mesh(tongueGeo, metalMat);
+      tongue.position.set(0, 0.08, 0.45);
+      tongue.rotation.x = -Math.PI / 2 - 0.2;
+      buckleGroup.add(tongue);
+
+      // 2. Hai con đỉa da (Fixed & Floating Keepers)
+      const keeperMat = createLeatherMaterial(currentConfig.leather);
+      const keeperGeo = new THREE.TorusGeometry(1.05, 0.12, 8, 20);
+
+      const fixedKeeper = new THREE.Mesh(keeperGeo, keeperMat);
+      fixedKeeper.scale.set(1, 0.45, 1);
+      fixedKeeper.rotation.x = Math.PI / 2;
+      fixedKeeper.position.set(0, 0, -0.8);
+      buckleGroup.add(fixedKeeper);
+
+      const floatKeeper = new THREE.Mesh(keeperGeo, keeperMat);
+      floatKeeper.scale.set(1, 0.45, 1);
+      floatKeeper.rotation.x = Math.PI / 2;
+      floatKeeper.position.set(0, 0, -1.8);
+      buckleGroup.add(floatKeeper);
+
+      // Định vị toàn bộ cụm khóa vào đầu dây ngắn
+      buckleGroup.position.copy(bucklePos);
+      buckleGroup.position.y += 0.05;
+      buckleGroup.rotation.x = 0.55;
+      group.add(buckleGroup);
+    }
+
+    // Dựng Mặt Đồng Hồ Mẫu (Watch Case 40mm)
+    function buildWatchCase() {
+      watchGroup = new THREE.Group();
+
+      const caseMetalMat = new THREE.MeshStandardMaterial({
+        color: 0xE0E0E0,
+        metalness: 0.95,
+        roughness: 0.18
+      });
+
+      // Vỏ tròn
+      const caseGeo = new THREE.CylinderGeometry(3.6, 3.6, 0.9, 48);
+      const watchCase = new THREE.Mesh(caseGeo, caseMetalMat);
+      watchCase.rotation.x = Math.PI / 2;
+      watchCase.castShadow = true;
+      watchGroup.add(watchCase);
+
+      // Mặt Dial tròn đen sang trọng
+      const dialGeo = new THREE.CircleGeometry(3.1, 48);
+      const dialMat = new THREE.MeshStandardMaterial({ color: 0x121212, roughness: 0.3 });
+      const dial = new THREE.Mesh(dialGeo, dialMat);
+      dial.position.z = 0.46;
+      watchGroup.add(dial);
+
+      // 4 chân Càng Lug giữ dây
+      for (let side of [-1, 1]) {
+        for (let end of [-1, 1]) {
+          const lugGeo = new THREE.BoxGeometry(0.3, 0.45, 1.1);
+          const lug = new THREE.Mesh(lugGeo, caseMetalMat);
+          lug.position.set(side * 1.15, 0, end * 3.7);
+          watchGroup.add(lug);
+        }
+      }
+
+      scene.add(watchGroup);
+    }
+
+    // Tạo Material PBR từ ảnh da thật của Percent kèm vân Normal Map
+    let leatherNormalMaps = {};
+    function createLeatherMaterial(leatherItem) {
+      if (!leatherTextures[leatherItem.id]) {
+        const texPath = leatherItem.tex || leatherItem.img;
+        const tex = textureLoader.load(texPath);
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(2.0, 6.0);
+        leatherTextures[leatherItem.id] = tex;
+      }
+
+      if (leatherItem.norm && !leatherNormalMaps[leatherItem.id]) {
+        const norm = textureLoader.load(leatherItem.norm);
+        norm.wrapS = THREE.RepeatWrapping;
+        norm.wrapT = THREE.RepeatWrapping;
+        norm.repeat.set(2.0, 6.0);
+        leatherNormalMaps[leatherItem.id] = norm;
+      }
+
+      const mat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(leatherItem.hex),
+        map: leatherTextures[leatherItem.id],
+        normalMap: leatherNormalMaps[leatherItem.id] || null,
+        normalScale: new THREE.Vector2(0.85, 0.85),
+        roughness: leatherItem.roughness,
+        metalness: 0.05
+      });
+
+      return mat;
+    }
+
+
+    function loadWatchFace(faceConfig) {
+        if(watchGroup) watchGroup.visible = false;
+        if(!faceConfig || !currentConfig.showWatch) return;
+        
+        if(loadedWatches[faceConfig.id]) {
+            watchGroup = loadedWatches[faceConfig.id];
+            watchGroup.visible = true;
+            return;
+        }
+        
+        gltfLoader.load(faceConfig.file, (gltf) => {
+            const watchModel = gltf.scene;
+            const box = new THREE.Box3().setFromObject(watchModel);
+            const center = box.getCenter(new THREE.Vector3());
+            watchModel.position.sub(center);
+            
+            watchModel.scale.set(faceConfig.scale, faceConfig.scale, faceConfig.scale);
+            watchModel.position.set(faceConfig.px, faceConfig.py, faceConfig.pz);
+            watchModel.rotation.set(faceConfig.rx, faceConfig.ry, faceConfig.rz);
+            
+            const group = new THREE.Group();
+            group.add(watchModel);
+            group.position.set(0, 0, 0.4); 
+            group.rotation.z = -Math.PI / 2;
+            
+            scene.add(group);
+            loadedWatches[faceConfig.id] = group;
+            watchGroup = group;
+        });
+    }
+
+    function update3D() {
+        if (!strapModel) return;
+
+        const tex = textureLoader.load(currentConfig.leather.tex || currentConfig.leather.img);
+        const norm = currentConfig.leather.norm ? textureLoader.load(currentConfig.leather.norm) : null;
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        if(norm) norm.wrapS = norm.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(1.5, 1.5);
+        if(norm) norm.repeat.set(1.5, 1.5);
+
+        const img = new Image();
+        img.src = currentConfig.leather.tex || currentConfig.leather.img;
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.width; canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            const data = ctx.getImageData(0,0,img.width,img.height).data;
+            let r=0, g=0, b=0;
+            for(let i=0; i<data.length; i+=4){ r+=data[i]; g+=data[i+1]; b+=data[i+2]; }
+            const cnt = data.length/4;
+            currentLeatherColor.setRGB(r/cnt/255, g/cnt/255, b/cnt/255);
+            updateStitch();
         };
 
-        function renderUI() {
-            document.getElementById('leather-grid').innerHTML = leathers.map(l => `
-                <div class="card ${state.leather.id === l.id ? 'active' : ''}" onclick="selectLeather('${l.id}')">
-                    <img src="${l.tex}" class="swatch-img">
-                    <div class="card-title">${l.name}</div>
-                    <div class="card-price">${l.desc}</div>
-                </div>
-            `).join('');
-
-            document.getElementById('stitch-grid').innerHTML = stitches.map(s => `
-                <div class="card ${state.stitch.id === s.id ? 'active' : ''}" onclick="selectStitch('${s.id}')">
-                    <div class="color-dot" style="background: ${s.color === 'match' ? 'linear-gradient(135deg, #444, #999)' : s.color}"></div>
-                    <div class="card-title">${s.name}</div>
-                </div>
-            `).join('');
-
-            document.getElementById('hardware-grid').innerHTML = hardwares.map(h => `
-                <div class="card ${state.hardware.id === h.id ? 'active' : ''}" onclick="selectHardware('${h.id}')">
-                    <div class="color-dot" style="background: ${h.color}"></div>
-                    <div class="card-title">${h.name}</div>
-                </div>
-            `).join('');
-            
-            document.getElementById('watchface-grid').innerHTML = watchFaces.map(c => `
-                <div class="card ${state.watchFace.id === c.id ? 'active' : ''}" onclick="selectWatchFace('${c.id}')">
-                    <div class="card-title">${c.name}</div>
-                </div>
-            `).join('');
-
-            document.getElementById('lbl-leather').innerHTML = `1. CHẤT LIỆU & MÀU DA <span>${state.leather.name} (${state.leather.desc})</span>`;
-            document.getElementById('lbl-stitch').innerHTML = `2. CHỈ MAY SADDLE STITCH <span>${state.stitch.name}</span>`;
-            document.getElementById('lbl-hardware').innerHTML = `3. KHÓA KIM LOẠI <span>${state.hardware.name}</span>`;
-            document.getElementById('lbl-watchcase').innerHTML = `4. ƯỚM THỬ VỚI MẶT ĐỒNG HỒ <span>${state.watchFace.name}</span>`;
-            document.getElementById('price-display').innerText = state.leather.price.toLocaleString('vi-VN') + '₫';
-        }
-
-        const container = document.getElementById('canvas-container');
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xF6F0E5);
-
-        const camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 100);
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
-        renderer.setSize(container.clientWidth, container.clientHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.outputEncoding = THREE.sRGBEncoding;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.2;
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        container.appendChild(renderer.domElement);
-
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.maxDistance = 15;
-        controls.minDistance = 2;
-
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
-
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-        dirLight.position.set(5, 8, 5);
-        dirLight.castShadow = true;
-        scene.add(dirLight);
-
-        const fillLight = new THREE.DirectionalLight(0xd4c5b9, 0.8);
-        fillLight.position.set(-5, 3, -5);
-        scene.add(fillLight);
-        
-        const rimLight = new THREE.DirectionalLight(0xffffff, 1.0);
-        rimLight.position.set(0, 5, -8);
-        scene.add(rimLight);
-
-        let strapModel = null;
-        let strapMaterials = [];
-        let stitchMaterials = [];
-        let hardwareMaterials = [];
-        
-        let loadedWatches = {};
-        let currentWatchGroup = null;
-
-        const textureLoader = new THREE.TextureLoader();
-        let currentLeatherColor = new THREE.Color();
-
-        const loader = new THREE.GLTFLoader();
-        const dracoLoader = new THREE.DRACOLoader();
-        dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/');
-        loader.setDRACOLoader(dracoLoader);
-
-        function init3D() {
-            loader.load('models/classic.glb', (gltf) => {
-                strapModel = gltf.scene;
-                
-                const box = new THREE.Box3().setFromObject(strapModel);
-                const center = box.getCenter(new THREE.Vector3());
-                strapModel.position.sub(center); 
-                strapModel.rotation.z = Math.PI / 2;
-                strapModel.rotation.x = Math.PI / 2;
-                
-                scene.add(strapModel);
-
-                strapModel.traverse((child) => {
-                    if (child.isMesh) {
-                        child.castShadow = true;
-                        child.receiveShadow = true;
-                        const mName = child.name.toLowerCase();
-                        if (mName.includes('leather') || mName.includes('padded') || mName.includes('tip') || mName.includes('keeper')) {
-                            const newMat = new THREE.MeshStandardMaterial({ roughness: 0.65, metalness: 0.05, color: 0xffffff });
-                            child.material = newMat;
-                            strapMaterials.push(newMat);
-                        } else if (mName.includes('stitch')) {
-                            const newMat = new THREE.MeshStandardMaterial({ roughness: 0.9, metalness: 0, color: 0xe8ddc5 });
-                            child.material = newMat;
-                            stitchMaterials.push(newMat);
-                        } else if (mName.includes('buckle') || mName.includes('wire')) {
-                            const newMat = new THREE.MeshStandardMaterial({ roughness: 0.2, metalness: 1.0, color: 0xeeeeee });
-                            child.material = newMat;
-                            hardwareMaterials.push(newMat);
-                        }
-                    }
-                });
-                
-                document.getElementById('loading').style.opacity = '0';
-                setTimeout(() => document.getElementById('loading').style.display = 'none', 500);
-
-                setCamera('front');
-                update3D();
-                
-                // Load default watch face
-                if(state.watchFace.file) {
-                    loadWatchFace(state.watchFace);
-                }
-
-            }, undefined, (err) => {
-                console.error(err);
-                document.getElementById('loading-text').innerHTML = '<span style="color:red">Lỗi tải mô hình dây đeo</span>';
-            });
-        }
-        
-        function loadWatchFace(faceConfig) {
-            if(currentWatchGroup) {
-                currentWatchGroup.visible = false;
-            }
-            if(!faceConfig.file || !state.showWatch) {
-                return;
-            }
-            if(loadedWatches[faceConfig.id]) {
-                currentWatchGroup = loadedWatches[faceConfig.id];
-                currentWatchGroup.visible = true;
-                return;
-            }
-            
-            document.getElementById('loading').style.display = 'flex';
-            document.getElementById('loading').style.opacity = '1';
-            document.getElementById('loading-text').innerText = 'Đang nạp mặt đồng hồ...';
-            
-            loader.load(faceConfig.file, (gltf) => {
-                const watchModel = gltf.scene;
-                // Center the watch
-                const box = new THREE.Box3().setFromObject(watchModel);
-                const center = box.getCenter(new THREE.Vector3());
-                watchModel.position.sub(center);
-                
-                // Apply transformations
-                watchModel.scale.set(faceConfig.scale, faceConfig.scale, faceConfig.scale);
-                watchModel.position.set(faceConfig.px, faceConfig.py, faceConfig.pz);
-                watchModel.rotation.set(faceConfig.rx, faceConfig.ry, faceConfig.rz);
-                
-                // For UGIA watch which is very small, we might need a different scale, done via faceConfig
-                
-                const group = new THREE.Group();
-                group.add(watchModel);
-                
-                // Ensure it's correctly aligned with the strap's coordinate system
-                // The strap is rotated by Math.PI/2 on X and Z.
-                // It's usually placed at the center (0,0,0)
-                group.position.set(0, 0, 0.4); 
-                group.rotation.z = -Math.PI / 2; // Match strap direction
-                
-                scene.add(group);
-                loadedWatches[faceConfig.id] = group;
-                currentWatchGroup = group;
-                
-                document.getElementById('loading').style.opacity = '0';
-                setTimeout(() => document.getElementById('loading').style.display = 'none', 500);
-            }, undefined, (err) => {
-                console.error(err);
-                document.getElementById('loading').style.opacity = '0';
-                setTimeout(() => document.getElementById('loading').style.display = 'none', 500);
-            });
-        }
-
-        function update3D() {
-            if (!strapModel) return;
-
-            const tex = textureLoader.load(state.leather.tex);
-            const norm = textureLoader.load(state.leather.norm);
-            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-            norm.wrapS = norm.wrapT = THREE.RepeatWrapping;
-            tex.repeat.set(1.5, 1.5);
-            norm.repeat.set(1.5, 1.5);
-
-            const img = new Image();
-            img.src = state.leather.tex;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = img.width; canvas.height = img.height;
-                ctx.drawImage(img, 0, 0);
-                const data = ctx.getImageData(0,0,img.width,img.height).data;
-                let r=0, g=0, b=0;
-                for(let i=0; i<data.length; i+=4){ r+=data[i]; g+=data[i+1]; b+=data[i+2]; }
-                const cnt = data.length/4;
-                currentLeatherColor.setRGB(r/cnt/255, g/cnt/255, b/cnt/255);
-                updateStitch();
-            };
-
-            strapMaterials.forEach(m => {
-                m.map = tex;
+        strapMaterials.forEach(m => {
+            m.map = tex;
+            if(norm) {
                 m.normalMap = norm;
                 if(m.normalScale) m.normalScale.set(1.2, 1.2);
-                m.color.setHex(0xffffff);
-                m.needsUpdate = true;
-            });
-
-            hardwareMaterials.forEach(m => {
-                m.color.set(state.hardware.color);
-                m.metalness = state.hardware.metal;
-                m.roughness = state.hardware.rough;
-                m.needsUpdate = true;
-            });
-        }
-
-        function updateStitch() {
-            if (!strapModel) return;
-            const sColor = state.stitch.color === 'match' ? currentLeatherColor : new THREE.Color(state.stitch.color);
-            stitchMaterials.forEach(m => {
-                m.color = sColor;
-                m.needsUpdate = true;
-            });
-        }
-
-        function toggleWatch() {
-            state.showWatch = !state.showWatch;
-            document.getElementById('btn-watch').innerText = state.showWatch ? '⌚ Mặt đồng hồ: BẬT' : '⌚ Mặt đồng hồ: TẮT';
-            document.getElementById('watch-options').style.display = state.showWatch ? 'block' : 'none';
-            if(state.showWatch) {
-                loadWatchFace(state.watchFace);
-            } else if(currentWatchGroup) {
-                currentWatchGroup.visible = false;
             }
-        }
-
-        function setCamera(view, btn) {
-            document.querySelectorAll('.btn-cam').forEach(b => b.classList.remove('active'));
-            if (btn) btn.classList.add('active');
-            else document.querySelector('.btn-cam').classList.add('active');
-
-            const dur = 1000;
-            const startPos = camera.position.clone();
-            let targetPos = new THREE.Vector3();
-            let targetLook = new THREE.Vector3(0,0,0);
-
-            if (view === 'front') { targetPos.set(-4, 5, 8); }
-            if (view === 'top') { targetPos.set(0, 10, 0); }
-            if (view === 'side') { targetPos.set(7, 2, 2); targetLook.set(3, 0, 0); }
-
-            const startT = performance.now();
-            function anim() {
-                const now = performance.now();
-                const t = Math.min((now - startT) / dur, 1);
-                const e = 1 - Math.pow(1 - t, 3);
-                camera.position.lerpVectors(startPos, targetPos, e);
-                controls.target.lerpVectors(controls.target, targetLook, e);
-                if (t < 1) requestAnimationFrame(anim);
-            }
-            anim();
-        }
-
-        window.addEventListener('resize', () => {
-            camera.aspect = container.clientWidth / container.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
+            m.color.setHex(0xffffff);
+            m.roughness = currentConfig.leather.roughness || 0.65;
+            m.needsUpdate = true;
         });
 
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-            renderer.render(scene, camera);
-        }
+        hardwareMaterials.forEach(m => {
+            m.color.set(currentConfig.buckleMetal.hex);
+            m.metalness = currentConfig.buckleMetal.metalness;
+            m.roughness = currentConfig.buckleMetal.roughness;
+            m.needsUpdate = true;
+        });
+    }
 
-        function selectLeather(id) { state.leather = leathers.find(l => l.id === id); renderUI(); update3D(); }
-        function selectStitch(id) { state.stitch = stitches.find(s => s.id === id); renderUI(); updateStitch(); }
-        function selectHardware(id) { state.hardware = hardwares.find(h => h.id === id); renderUI(); update3D(); }
-        function selectWatchFace(id) { 
-            state.watchFace = watchFaces.find(c => c.id === id); 
-            renderUI(); 
-            if(state.showWatch) loadWatchFace(state.watchFace); 
-        }
+    function updateStitch() {
+        if (!strapModel) return;
+        const sColor = currentConfig.stitch.id === 'matching' ? currentLeatherColor : new THREE.Color(currentConfig.stitch.hex);
+        stitchMaterials.forEach(m => {
+            m.color = sColor;
+            m.needsUpdate = true;
+        });
+    }
+    
+    // Render loop
+    function animate() {
+      requestAnimationFrame(animate);
 
-        renderUI();
-        init3D();
-        animate();
-    </script>
+      if (currentConfig.autoRotate) {
+        strapGroup.rotation.y += 0.006;
+        if (watchGroup) watchGroup.rotation.y += 0.006;
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    function onWindowResize() {
+      const container = document.querySelector('.viewport-container');
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    }
+
+    // --- CÁC HÀM TƯƠNG TÁC CONFIGURATOR ---
+    function selectLeather(leatherId) {
+      const item = LEATHER_CATALOG.find(l => l.id === leatherId);
+      if (!item) return;
+      currentConfig.leather = item;
+
+      // Cập nhật 3D
+      update3D();
+
+      // Cập nhật UI
+      document.getElementById('val-leather').innerText = `${item.name} (${item.color})`;
+      document.querySelectorAll('.leather-card').forEach(c => {
+        c.classList.toggle('active', c.dataset.id === leatherId);
+      });
+
+      updatePrice();
+    }
+
+    function selectStitch(stitchId) {
+      const item = STITCH_COLORS.find(s => s.id === stitchId);
+      if (!item) return;
+      currentConfig.stitch = item;
+
+      updateStitch();
+
+      document.getElementById('val-stitch').innerText = item.name;
+      document.querySelectorAll('.stitch-swatch').forEach(s => {
+        s.classList.toggle('active', s.dataset.id === stitchId);
+      });
+    }
+
+    function selectBuckleMetal(metalId) {
+      const item = BUCKLE_METALS.find(m => m.id === metalId);
+      if (!item) return;
+      currentConfig.buckleMetal = item;
+
+      update3D();
+
+      document.getElementById('val-buckle').innerText = `${item.name} (${currentConfig.buckleType === 'tang' ? 'Khóa kim' : 'Khóa bướm'})`;
+      document.querySelectorAll('.buckle-card').forEach(b => {
+        b.classList.toggle('active', b.dataset.id === metalId);
+      });
+    }
+
+    function setBuckleType(type, el) {
+      currentConfig.buckleType = type;
+      el.parentElement.querySelectorAll('.size-pill').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      selectBuckleMetal(currentConfig.buckleMetal.id);
+      updatePrice();
+    }
+
+    function setLugSize(size, el) {
+      currentConfig.lugSize = size;
+      el.parentElement.querySelectorAll('.size-pill').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('val-lug').innerText = size;
+    }
+
+    function setWristSize(size, el) {
+      currentConfig.wristSize = size;
+      el.parentElement.querySelectorAll('.size-pill').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('val-wrist').innerText = size;
+    }
+
+    function updateEngraving(text) {
+      currentConfig.engraving = text;
+      updateEngraveTextureText(text);
+    }
+
+    function updatePrice() {
+      let total = currentConfig.leather.price;
+      if (currentConfig.buckleType === 'deployant') {
+        total += 150000;
+      }
+      document.getElementById('total-price').innerText = new Intl.NumberFormat('vi-VN').format(total) + '₫';
+    }
+
+    // --- CÁC GÓC NHÌN CAMERA PRESET ---
+    function setCameraView(preset) {
+      document.querySelectorAll('.camera-presets .vp-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+
+      switch(preset) {
+        case 'overview':
+          animateCamera(0, 18, 28, 0, 0, 0);
+          break;
+        case 'buckle':
+          animateCamera(0, 5, 20, 0, -4, 12);
+          break;
+        case 'tail':
+          animateCamera(0, 2, -22, 0, -5, -14);
+          break;
+        case 'lining':
+          animateCamera(0, -18, 15, 0, 0, 0);
+          break;
+      }
+    }
+
+    function animateCamera(x, y, z, tx, ty, tz) {
+      const startPos = camera.position.clone();
+      const endPos = new THREE.Vector3(x, y, z);
+      const startTarget = controls.target.clone();
+      const endTarget = new THREE.Vector3(tx, ty, tz);
+
+      let progress = 0;
+      function step() {
+        progress += 0.04;
+        if (progress <= 1) {
+          camera.position.lerpVectors(startPos, endPos, progress);
+          controls.target.lerpVectors(startTarget, endTarget, progress);
+          requestAnimationFrame(step);
+        } else {
+          camera.position.copy(endPos);
+          controls.target.copy(endTarget);
+        }
+      }
+      step();
+    }
+
+    function toggleWatchCase() {
+      currentConfig.showWatch = !currentConfig.showWatch;
+      const btn = document.getElementById('btn-toggle-watch');
+      btn.innerText = `⌚ Ướm Đồng Hồ: ${currentConfig.showWatch ? 'BẬT' : 'TẮT'}`;
+      btn.classList.toggle('active', currentConfig.showWatch);
+      
+      if(currentConfig.showWatch) {
+          loadWatchFace(currentConfig.watchFace);
+      } else if(watchGroup) {
+          watchGroup.visible = false;
+      }
+    }
+    
+    function setWatchFace(faceId) {
+        const face = WATCH_FACES.find(f => f.id === faceId);
+        if(!face) return;
+        currentConfig.watchFace = face;
+        
+        document.getElementById('val-watchface').innerText = face.name;
+        document.querySelectorAll('.watchface-pill').forEach(p => p.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        if(currentConfig.showWatch) {
+            loadWatchFace(face);
+        }
+    }
+    
+
+    function toggleAutoRotate() {
+      currentConfig.autoRotate = !currentConfig.autoRotate;
+      const btn = document.getElementById('btn-toggle-rotate');
+      btn.classList.toggle('active', currentConfig.autoRotate);
+    }
+
+    // Chụp snapshot tải về
+    function captureSnapshot() {
+      renderer.render(scene, camera);
+      const dataURL = renderer.domElement.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = dataURL;
+      a.download = `percent-3d-${currentConfig.leather.id}.png`;
+      a.click();
+      confetti({ particleCount: 50, spread: 60, origin: { y: 0.8 } });
+    }
+
+    // Modal Checkout
+    function openCheckoutModal() {
+      let total = currentConfig.leather.price + (currentConfig.buckleType === 'deployant' ? 150000 : 0);
+      const html = `
+        <div class="summary-row"><span class="summary-label">Mẫu Dây Da:</span><span class="summary-val">${currentConfig.leather.name} (${currentConfig.leather.color})</span></div>
+        <div class="summary-row"><span class="summary-label">Màu Chỉ May:</span><span class="summary-val">${currentConfig.stitch.name}</span></div>
+        <div class="summary-row"><span class="summary-label">Kiểu Khóa:</span><span class="summary-val">${currentConfig.buckleType === 'tang' ? 'Khóa Kim' : 'Khóa Bướm'} (${currentConfig.buckleMetal.name})</span></div>
+        <div class="summary-row"><span class="summary-label">Size Dây:</span><span class="summary-val">${currentConfig.lugSize}</span></div>
+        <div class="summary-row"><span class="summary-label">Chu Vi Tay:</span><span class="summary-val">${currentConfig.wristSize}</span></div>
+        <div class="summary-row"><span class="summary-label">Khắc Laser:</span><span class="summary-val">${currentConfig.engraving || 'Không khắc'}</span></div>
+        <div class="summary-row" style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--pc-border); font-size: 14px;"><span class="summary-label" style="font-weight: 700; color: var(--pc-espresso);">Tổng Thanh Toán:</span><span class="summary-val" style="color: var(--pc-cognac); font-size: 16px;">${new Intl.NumberFormat('vi-VN').format(total)}₫</span></div>
+      `;
+      document.getElementById('summary-content').innerHTML = html;
+      document.getElementById('checkout-modal').style.display = 'flex';
+      confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+    }
+
+    function closeCheckoutModal() {
+      document.getElementById('checkout-modal').style.display = 'none';
+    }
+
+    function sendOrderZalo() {
+      const msg = `Xin chào Percent! Tôi muốn đặt may bộ dây da 3D:
+- Dòng: ${currentConfig.leather.name} (${currentConfig.leather.color})
+- Chỉ: ${currentConfig.stitch.name}
+- Khóa: ${currentConfig.buckleType === 'tang' ? 'Khóa Kim' : 'Khóa Bướm'} (${currentConfig.buckleMetal.name})
+- Size lug: ${currentConfig.lugSize} | Cổ tay: ${currentConfig.wristSize}
+- Khắc tên: ${currentConfig.engraving || 'Không'}
+Nhờ xưởng tư vấn và chế tác giúp tôi!`;
+      window.open(`https://zalo.me/0902678910?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+
+    function sendOrderShopDongHo() {
+      alert('Đã đóng gói dữ liệu cấu hình 3D! Trong bản live trên web, thông số này sẽ tự động chuyển thẳng vào giỏ hàng WooCommerce của shopdongho.com.');
+    }
+
+    // --- RENDER GIAO DIỆN KHỞI TẠO ---
+    function renderUI() {
+      // 1. Grid da
+      const lGrid = document.getElementById('leather-grid');
+      lGrid.innerHTML = LEATHER_CATALOG.map((l, idx) => `
+        <div class="leather-card ${idx === 0 ? 'active' : ''}" data-id="${l.id}" onclick="selectLeather('${l.id}')">
+          <div class="leather-img-wrap">
+            <img src="${l.img}" alt="${l.name}">
+          </div>
+          <div class="leather-name">${l.name.replace('Percent ', '')}</div>
+          <div class="leather-color-tag">${l.color}</div>
+          <div class="leather-price">${new Intl.NumberFormat('vi-VN').format(l.price)}₫</div>
+        </div>
+      `).join('');
+
+      // 2. Swatch chỉ may
+      const sGroup = document.getElementById('stitch-group');
+      sGroup.innerHTML = STITCH_COLORS.map((s, idx) => `
+        <div class="stitch-swatch ${idx === 0 ? 'active' : ''}" data-id="${s.id}" onclick="selectStitch('${s.id}')">
+          <div class="stitch-dot" style="background: ${s.hex};"></div>
+          <span class="stitch-label">${s.name.split(' ')[1] || s.name}</span>
+        </div>
+      `).join('');
+
+      // 3. Grid khóa
+      const bGrid = document.getElementById('buckle-grid');
+      bGrid.innerHTML = BUCKLE_METALS.map((b, idx) => `
+        <div class="buckle-card ${idx === 0 ? 'active' : ''}" data-id="${b.id}" onclick="selectBuckleMetal('${b.id}')">
+          <div class="buckle-metal-pill" style="background: ${b.hex};"></div>
+          <div class="buckle-name">${b.name}</div>
+        </div>
+      `).join('');
+    }
+
+    // Khởi động khi tải xong trang
+    window.addEventListener('DOMContentLoaded', () => {
+      renderUI();
+      init3D();
+      updatePrice();
+    });
+  </script>
 </body>
 </html>
