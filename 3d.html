@@ -513,7 +513,7 @@ function applyColors() {
   matThread.color.copy(optColor(THREADS, S.thread, tone, 1.35));
   matEdge.color.copy(optColor(EDGES, S.edge, tone, .6));
   matLining.color.copy(optColor(LININGS, S.lining, tone, .85));
-  for (const m of [matStampT, matStampL]) { m.color.copy(matLining.color); m.roughness = matLining.roughness; }
+  stampTone();
   const b = BUCKLES.find(x => x.id === S.buckle); matBuckle.color.set(b.c); matBuckle.roughness = b.r;
   const c = CASES.find(x => x.id === S.wcase); matCase.color.set(c.c); matCase.roughness = c.r; matBezel.color.set(c.c);
   matIdx.color.set(S.wcase === 'gold' ? '#e2bf7a' : '#e9ecef');
@@ -819,6 +819,14 @@ const STAMP_PX = 24, STAMP_PAD = .8, STAMP_FONT = '"Be Vietnam Pro", "Helvetica 
 const mkStampMat = () => new THREE.MeshStandardMaterial({ color: 0x4a2e1e, roughness: .8, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
 const matStampT = mkStampMat(), matStampL = mkStampMat();
 let STAMPS = null;
+// stamp colour follows the lining; on near-black linings the burnished letters read lighter instead of darker
+function stampTone() {
+  const c = matLining.color, dark = c.r * .2126 + c.g * .7152 + c.b * .0722 < .04;
+  for (const [m, k] of [[matStampT, 'T'], [matStampL, 'L']]) {
+    m.color.copy(c).multiplyScalar(2); m.roughness = matLining.roughness;
+    if (STAMPS) m.map = dark ? STAMPS[k].mapL : STAMPS[k].map;
+  }
+}
 // draw(g, W, H) paints the mark white on black; canvas +x runs along the strap (lug to buckle/tip), canvas up is local +x
 function stampSet(wmm, hmm, draw) {
   const W = Math.ceil(wmm * STAMP_PX), H = Math.ceil(hmm * STAMP_PX), N = W * H;
@@ -831,7 +839,11 @@ function stampSet(wmm, hmm, draw) {
   const hg = blur(blur(m, W, H, 1), W, H, 1), halo = blur(m, W, H, Math.round(STAMP_PX * .45));
   const paint = fn => { const c = cv(), x = c.getContext('2d'), d = x.createImageData(W, H); for (let i = 0; i < N; i++) { const v = fn(i), q = i * 4; d.data[q] = v[0]; d.data[q + 1] = v[1]; d.data[q + 2] = v[2]; d.data[q + 3] = 255; } x.putImageData(d, 0, 0); return c; };
   const hm = (i, j) => 1 - hg[clamp(j, 0, H - 1) * W + clamp(i, 0, W - 1)];
-  const K = 1.4, alb = paint(i => { const v = 255 * (1 - .25 * hg[i]); return [v, v, v]; });
+  // albedo at half scale (material colour is lining x2) so letters can go darker on light linings or lighter on dark ones;
+  // the pressed letters are burnished, so they are also smoother than the surrounding leather
+  const K = 1.4, alb = paint(i => { const v = 127.5 * (1 - .25 * hg[i]); return [v, v, v]; });
+  const albL = paint(i => { const v = 127.5 * (1 + .9 * hg[i]); return [v, v, v]; });
+  const rmap = paint(i => { const v = 255 * (1 - .45 * hg[i]); return [v, v, v]; });
   const amap = paint(i => { const v = 255 * clamp(halo[i] * 5, 0, 1); return [v, v, v]; });
   const nmap = paint(i => {
     const x = i % W, y = (i - x) / W;
@@ -841,7 +853,7 @@ function stampSet(wmm, hmm, draw) {
     return [(nx / l * .5 + .5) * 255, (ny / l * .5 + .5) * 255, (1 / l * .5 + .5) * 255];
   });
   const tex = c => { const t = new THREE.CanvasTexture(c); t.anisotropy = maxAniso; return t; };
-  return { map: tex(alb), nmap: tex(nmap), amap: tex(amap), w: wmm, h: hmm, mask: mc };
+  return { map: tex(alb), mapL: tex(albL), nmap: tex(nmap), amap: tex(amap), rmap: tex(rmap), w: wmm, h: hmm, mask: mc };
 }
 async function initStamps() {
   const TXT = 'percent.vn', EM = 3.4, emPx = EM * STAMP_PX;
@@ -863,8 +875,9 @@ async function initStamps() {
     g.lineWidth = .09 * u;
     for (const [cx, cy] of [[-.25, -.19], [.25, .19]]) { g.beginPath(); g.arc(cx * u, cy * u, .126 * u, 0, Math.PI * 2); g.stroke(); }
   });
-  for (const [mat, s] of [[matStampT, T], [matStampL, L]]) { mat.map = s.map; mat.normalMap = s.nmap; mat.alphaMap = s.amap; mat.needsUpdate = true; }
+  for (const [mat, s] of [[matStampT, T], [matStampL, L]]) { mat.map = s.map; mat.normalMap = s.nmap; mat.alphaMap = s.amap; mat.roughnessMap = s.rmap; mat.needsUpdate = true; }
   STAMPS = { T, L };
+  stampTone();
 }
 function stampGeo(pc, u0, u1, hx) {
   const nu = Math.max(2, Math.ceil((u1 - u0) / .5)), nx = 4, rows = [];
