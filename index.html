@@ -1,1616 +1,333 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PERCENT 3D Bespoke Studio - Thiết Kế Dây Da Đồng Hồ Thủ Công</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
-  
-  <!-- Three.js & OrbitControls -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-
-  <style>
-    :root {
-      --pc-cream: #F6F0E5;
-      --pc-cream-light: #FAF7F2;
-      --pc-cream-card: #FFFFFF;
-      --pc-espresso: #241813;
-      --pc-cognac: #9C5A2C;
-      --pc-gold: #C29D59;
-      --pc-border: #E8DFD3;
-      --pc-text-muted: #7A6F68;
-      --pc-text-dark: #221A15;
-      --pc-shadow-sm: 0 2px 8px rgba(36, 24, 19, 0.06);
-      --pc-shadow-md: 0 8px 24px rgba(36, 24, 19, 0.08);
-      --pc-shadow-lg: 0 16px 40px rgba(36, 24, 19, 0.12);
-      --font-body: 'Be Vietnam Pro', -apple-system, sans-serif;
-      --font-serif: 'Playfair Display', Georgia, serif;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: var(--font-body);
-      background-color: var(--pc-cream);
-      color: var(--pc-text-dark);
-      overflow-x: hidden;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    /* Header Brand */
-    header {
-      height: 60px;
-      background: rgba(246, 240, 229, 0.95);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--pc-border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 24px;
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 50;
-    }
-    .brand-wrap {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      text-decoration: none;
-      color: var(--pc-espresso);
-    }
-    .brand-wrap img {
-      height: 32px;
-      width: auto;
-      object-fit: contain;
-    }
-    .brand-text {
-      display: flex;
-      flex-direction: column;
-    }
-    .brand-title {
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-    }
-    .brand-sub {
-      font-size: 10px;
-      color: var(--pc-cognac);
-      font-style: italic;
-      letter-spacing: 0.5px;
-    }
-    .header-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 12px;
-      border-radius: 999px;
-      background: rgba(156, 90, 44, 0.1);
-      color: var(--pc-cognac);
-      font-size: 11px;
-      font-weight: 600;
-    }
-    .pulse-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--pc-cognac);
-      animation: pulse 1.5s infinite;
-    }
-    @keyframes pulse {
-      0% { transform: scale(0.9); opacity: 0.7; }
-      50% { transform: scale(1.3); opacity: 1; }
-      100% { transform: scale(0.9); opacity: 0.7; }
-    }
-
-    /* Main Container Split */
-    .app-container {
-      margin-top: 60px;
-      display: flex;
-      height: calc(100vh - 60px);
-      width: 100vw;
-      position: relative;
-    }
-
-    /* 3D Viewport (Left) */
-    .viewport-container {
-      flex: 1;
-      height: 100%;
-      position: relative;
-      background: radial-gradient(circle at 50% 50%, #FAF6EE 0%, #ECE3D2 100%);
-      overflow: hidden;
-    }
-    #webgl-canvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-      cursor: grab;
-    }
-    #webgl-canvas:active {
-      cursor: grabbing;
-    }
-
-    /* Viewport Floating Controls */
-    .viewport-overlay {
-      position: absolute;
-      top: 16px;
-      left: 16px;
-      right: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      pointer-events: none;
-    }
-    .camera-presets, .view-toggles {
-      display: flex;
-      gap: 8px;
-      pointer-events: auto;
-    }
-    .vp-btn {
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(8px);
-      border: 1px solid var(--pc-border);
-      border-radius: 8px;
-      padding: 6px 12px;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--pc-espresso);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      box-shadow: var(--pc-shadow-sm);
-      transition: all 0.2s ease;
-    }
-    .vp-btn:hover {
-      background: #FFFFFF;
-      border-color: var(--pc-cognac);
-      color: var(--pc-cognac);
-      transform: translateY(-1px);
-    }
-    .vp-btn.active {
-      background: var(--pc-espresso);
-      color: #FFFFFF;
-      border-color: var(--pc-espresso);
-    }
-
-    /* Floating Hint */
-    .hint-chip {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(36, 24, 19, 0.75);
-      backdrop-filter: blur(6px);
-      color: #FFFFFF;
-      font-size: 11px;
-      padding: 6px 16px;
-      border-radius: 999px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      pointer-events: none;
-      animation: fadeIn 0.8s ease;
-    }
-
-    /* Configurator Drawer / Sidebar (Right) */
-    .config-sidebar {
-      width: 440px;
-      height: 100%;
-      background: var(--pc-cream-card);
-      border-left: 1px solid var(--pc-border);
-      display: flex;
-      flex-direction: column;
-      box-shadow: -4px 0 20px rgba(36, 24, 19, 0.04);
-      z-index: 20;
-    }
-    .config-scroll {
-      flex: 1;
-      overflow-y: auto;
-      padding: 24px;
-    }
-
-    /* Section Styles */
-    .step-section {
-      margin-bottom: 28px;
-      padding-bottom: 24px;
-      border-bottom: 1px solid var(--pc-border);
-    }
-    .step-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      margin-bottom: 14px;
-    }
-    .step-title {
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      color: var(--pc-espresso);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .step-num {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: var(--pc-cognac);
-      color: #FFFFFF;
-      font-size: 11px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .step-selected-val {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--pc-cognac);
-    }
-
-    /* Grid Options */
-    .option-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
-    .leather-card {
-      border: 1.5px solid var(--pc-border);
-      border-radius: 10px;
-      padding: 8px;
-      cursor: pointer;
-      text-align: center;
-      transition: all 0.2s ease;
-      background: #FFFFFF;
-      position: relative;
-    }
-    .leather-card:hover {
-      border-color: var(--pc-cognac);
-      transform: translateY(-2px);
-      box-shadow: var(--pc-shadow-sm);
-    }
-    .leather-card.active {
-      border-color: var(--pc-cognac);
-      background: rgba(156, 90, 44, 0.04);
-      box-shadow: 0 0 0 1px var(--pc-cognac);
-    }
-    .leather-img-wrap {
-      width: 100%;
-      aspect-ratio: 1;
-      border-radius: 6px;
-      overflow: hidden;
-      margin-bottom: 6px;
-      background: #F4EFE6;
-    }
-    .leather-img-wrap img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .leather-name {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--pc-espresso);
-      line-height: 1.3;
-    }
-    .leather-color-tag {
-      font-size: 10px;
-      color: var(--pc-text-muted);
-      margin-top: 2px;
-    }
-    .leather-price {
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--pc-cognac);
-      margin-top: 2px;
-    }
-
-    /* Swatches for Stitch & Buckle */
-    .swatch-group {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .stitch-swatch {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      cursor: pointer;
-      padding: 6px 10px;
-      border-radius: 8px;
-      border: 1px solid var(--pc-border);
-      transition: all 0.2s ease;
-    }
-    .stitch-swatch:hover, .stitch-swatch.active {
-      border-color: var(--pc-cognac);
-      background: rgba(156, 90, 44, 0.05);
-    }
-    .stitch-dot {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      border: 1.5px solid rgba(0,0,0,0.15);
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
-    }
-    .stitch-label {
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--pc-espresso);
-    }
-
-    /* Buckle Cards */
-    .buckle-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-    }
-    .buckle-card {
-      border: 1px solid var(--pc-border);
-      border-radius: 8px;
-      padding: 8px 4px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .buckle-card:hover, .buckle-card.active {
-      border-color: var(--pc-cognac);
-      background: rgba(156, 90, 44, 0.05);
-    }
-    .buckle-metal-pill {
-      width: 24px;
-      height: 12px;
-      border-radius: 6px;
-      margin: 0 auto 6px auto;
-      border: 1px solid rgba(0,0,0,0.1);
-    }
-    .buckle-name {
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--pc-espresso);
-    }
-
-    /* Size Selector */
-    .pill-group {
-      display: flex;
-      gap: 8px;
-    }
-    .size-pill {
-      flex: 1;
-      padding: 8px;
-      text-align: center;
-      border: 1px solid var(--pc-border);
-      border-radius: 8px;
-      font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .size-pill:hover, .size-pill.active {
-      border-color: var(--pc-cognac);
-      background: var(--pc-espresso);
-      color: #FFFFFF;
-    }
-
-    /* Engraving Input */
-    .engrave-input-wrap {
-      display: flex;
-      gap: 8px;
-      margin-top: 8px;
-    }
-    .engrave-input {
-      flex: 1;
-      border: 1.5px solid var(--pc-border);
-      border-radius: 8px;
-      padding: 10px 14px;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      outline: none;
-      transition: all 0.2s ease;
-      background: #FFFFFF;
-      color: var(--pc-espresso);
-    }
-    .engrave-input:focus {
-      border-color: var(--pc-cognac);
-      box-shadow: 0 0 0 2px rgba(156, 90, 44, 0.15);
-    }
-    .engrave-hint {
-      font-size: 11px;
-      color: var(--pc-text-muted);
-      margin-top: 6px;
-      font-style: italic;
-    }
-
-    /* Bottom Action Bar */
-    .config-footer {
-      padding: 18px 24px;
-      background: #FFFFFF;
-      border-top: 1px solid var(--pc-border);
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      box-shadow: 0 -4px 16px rgba(36, 24, 19, 0.05);
-    }
-    .price-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-    }
-    .price-label {
-      font-size: 12px;
-      color: var(--pc-text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .price-amount {
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--pc-cognac);
-      font-family: var(--font-serif);
-    }
-    .action-btn-row {
-      display: flex;
-      gap: 10px;
-    }
-    .btn-secondary {
-      flex: 1;
-      padding: 12px;
-      border: 1px solid var(--pc-border);
-      border-radius: 8px;
-      background: #FFFFFF;
-      color: var(--pc-espresso);
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition: all 0.2s;
-    }
-    .btn-secondary:hover {
-      background: var(--pc-cream);
-      border-color: var(--pc-cognac);
-    }
-    .btn-primary {
-      flex: 2;
-      padding: 12px;
-      border: none;
-      border-radius: 8px;
-      background: var(--pc-espresso);
-      color: #FFFFFF;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.2s;
-      box-shadow: 0 4px 12px rgba(36, 24, 19, 0.2);
-    }
-    .btn-primary:hover {
-      background: var(--pc-cognac);
-      transform: translateY(-1px);
-    }
-
-    /* Modal Checkout */
-    .modal-backdrop {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(36, 24, 19, 0.6);
-      backdrop-filter: blur(8px);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-      padding: 16px;
-    }
-    .modal-box {
-      width: 100%;
-      max-width: 480px;
-      background: #FFFFFF;
-      border-radius: 16px;
-      padding: 28px;
-      box-shadow: var(--pc-shadow-lg);
-      position: relative;
-      animation: scaleUp 0.3s ease;
-    }
-    @keyframes scaleUp {
-      from { transform: scale(0.92); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
-    .modal-close {
-      position: absolute;
-      top: 16px; right: 16px;
-      background: #F4EFE6;
-      border: none;
-      width: 28px; height: 28px;
-      border-radius: 50%;
-      font-size: 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--pc-espresso);
-    }
-    .modal-title {
-      font-size: 18px;
-      font-family: var(--font-serif);
-      color: var(--pc-espresso);
-      margin-bottom: 6px;
-    }
-    .modal-desc {
-      font-size: 12px;
-      color: var(--pc-text-muted);
-      margin-bottom: 20px;
-      line-height: 1.5;
-    }
-    .summary-card {
-      background: var(--pc-cream);
-      border-radius: 10px;
-      padding: 14px;
-      margin-bottom: 20px;
-      font-size: 12px;
-    }
-    .summary-row {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-    .summary-row:last-child { margin-bottom: 0; }
-    .summary-label { color: var(--pc-text-muted); }
-    .summary-val { font-weight: 600; color: var(--pc-espresso); }
-
-    /* Mobile Responsive */
-    @media (max-width: 900px) {
-      .app-container {
-        flex-direction: column;
-        height: auto;
-      }
-      .viewport-container {
-        height: 52vh;
-        width: 100vw;
-      }
-      .config-sidebar {
-        width: 100vw;
-        height: auto;
-      }
-      .config-scroll {
-        padding-bottom: 120px;
-      }
-      .config-footer {
-        position: fixed;
-        bottom: 0; left: 0; right: 0;
-        z-index: 100;
-        border-radius: 20px 20px 0 0;
-        padding-bottom: env(safe-area-inset-bottom, 16px);
-        box-shadow: 0 -8px 24px rgba(36,24,19,0.1);
-      }
-      .vp-btn {
-        padding: 10px 14px;
-        font-size: 13px;
-      }
-      .size-pill {
-        padding: 12px;
-      }
-      .btn-primary, .btn-secondary {
-        padding: 16px;
-        font-size: 14px;
-      }
-    }
-  </style>
-</head>
-<body>
-
-  <!-- Header -->
-  <header>
-    <a class="brand-wrap" href="https://shopdongho.com/percent/">
-      <img src="img/logo.png" alt="Percent Logo">
-      <div class="brand-text">
-        <span class="brand-title">PERCENT BESPOKE</span>
-        <span class="brand-sub">Atelier Chế Tác Thủ Công 18 Bước</span>
-      </div>
-    </a>
-    <div class="header-badge">
-      <span class="pulse-dot"></span>
-      <span>3D Studio Live</span>
-    </div>
-  </header>
-
-  <!-- Main View -->
-  <div class="app-container">
-    
-    <!-- Left: 3D Canvas -->
-    <div class="viewport-container">
-      <canvas id="webgl-canvas"></canvas>
-
-      <!-- Overlay Floating Bar -->
-      <div class="viewport-overlay">
-        <div class="camera-presets">
-          <button class="vp-btn active" onclick="setCameraView('overview')">📐 Toàn Cảnh</button>
-          <button class="vp-btn" onclick="setCameraView('buckle')">🔒 Khóa & Đỉa</button>
-          <button class="vp-btn" onclick="setCameraView('tail')">✂ Mũi Dây</button>
-          <button class="vp-btn" onclick="setCameraView('lining')">🔄 Lót Zermatt</button>
-        </div>
-        <div class="view-toggles">
-          <button class="vp-btn" id="btn-toggle-watch" onclick="toggleWatchCase()">⌚ Ướm Đồng Hồ: BẬT</button>
-          <button class="vp-btn" id="btn-toggle-rotate" onclick="toggleAutoRotate()">🔄 Tự Xoay</button>
-        </div>
-      </div>
-
-      <div class="hint-chip">
-        <span>👆 Giữ chuột/chạm để xoay 360° & cuộn để phóng to</span>
-      </div>
-    </div>
-
-    <!-- Right: Configurator Sidebar -->
-    <div class="config-sidebar">
-      <div class="config-scroll">
-
-        <!-- Step 1: Chọn Da Thật Percent -->
-        <div class="step-section">
-          <div class="step-header">
-            <span class="step-title"><span class="step-num">1</span> Chất Liệu & Màu Da</span>
-            <span class="step-selected-val" id="val-leather">Agon Soil (Nâu đất Ý)</span>
-          </div>
-          <div class="option-grid" id="leather-grid">
-            <!-- Rendered by JS -->
-          </div>
-        </div>
-
-        <!-- Step 2: Màu Chỉ May Thủ Công -->
-        <div class="step-section">
-          <div class="step-header">
-            <span class="step-title"><span class="step-num">2</span> Đường Chỉ May (Saddle Stitch)</span>
-            <span class="step-selected-val" id="val-stitch">Chỉ kem vintage</span>
-          </div>
-          <div class="swatch-group" id="stitch-group">
-            <!-- Rendered by JS -->
-          </div>
-        </div>
-
-        <!-- Step 3: Khóa & Kim Loại -->
-        <div class="step-section">
-          <!-- Watch face toggle -->
-          <div class="step-header" style="margin-bottom: 10px;">
-            <span class="step-title" style="font-size: 11px;">Mặt đồng hồ ướm thử</span>
-            <span class="step-selected-val" id="val-watchface">Classic Rolex</span>
-          </div>
-          
-          <div class="pill-group" style="margin-bottom: 20px;">
-            <div class="size-pill active watchface-pill" onclick="setWatchFace('classic_rolex', this)">Classic Rolex</div>
-            <div class="size-pill watchface-pill" onclick="setWatchFace('smart_apple', this)">Apple Watch</div>
-            <div class="size-pill watchface-pill" onclick="setWatchFace('smart_round', this)">Smart Round</div>
-          </div>
-
-          <div class="step-header">
-            <span class="step-title"><span class="step-num">3</span> Khóa & Màu Kim Loại</span>
-            <span class="step-selected-val" id="val-buckle">Bạc Inox (Khóa kim)</span>
-          </div>
-          <div style="margin-bottom: 12px;">
-            <div class="pill-group" style="margin-bottom: 10px;">
-              <div class="size-pill active" onclick="setBuckleType('tang', this)">Khóa Kim Chuẩn</div>
-              <div class="size-pill" onclick="setBuckleType('deployant', this)">Khóa Bướm (+150k)</div>
-            </div>
-            <div class="buckle-grid" id="buckle-grid">
-              <!-- Rendered by JS -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Step 4: Kích Thước & Đo Tay -->
-        <div class="step-section">
-          <div class="step-header">
-            <span class="step-title"><span class="step-num">4</span> Kích Thước Bản Dây (Lug)</span>
-            <span class="step-selected-val" id="val-lug">20 - 18 mm</span>
-          </div>
-          <div class="pill-group" style="margin-bottom: 12px;">
-            <div class="size-pill" onclick="setLugSize('18 - 16 mm', this)">18 - 16 mm</div>
-            <div class="size-pill active" onclick="setLugSize('20 - 18 mm', this)">20 - 18 mm</div>
-            <div class="size-pill" onclick="setLugSize('22 - 20 mm', this)">22 - 20 mm</div>
-          </div>
-          <div class="step-header" style="margin-top: 14px;">
-            <span class="step-title" style="font-size: 11px;">Chu vi cổ tay</span>
-            <span class="step-selected-val" id="val-wrist">16.5 cm (Chuẩn 115/75mm)</span>
-          </div>
-          <div class="pill-group">
-            <div class="size-pill" onclick="setWristSize('15.0 cm (Nhỏ 105/65mm)', this)">15 cm (Nhỏ)</div>
-            <div class="size-pill active" onclick="setWristSize('16.5 cm (Chuẩn 115/75mm)', this)">16.5 cm (Chuẩn)</div>
-            <div class="size-pill" onclick="setWristSize('18.0 cm (Lớn 125/80mm)', this)">18 cm (Lớn)</div>
-          </div>
-        </div>
-
-        <!-- Step 5: Khắc Tên Laser -->
-        <div class="step-section" style="border-bottom: none;">
-          <div class="step-header">
-            <span class="step-title"><span class="step-num">5</span> Cá Nhân Hóa (Khắc Tên Laser)</span>
-            <span class="step-selected-val">Miễn phí</span>
-          </div>
-          <div class="engrave-input-wrap">
-            <input type="text" id="engrave-text" class="engrave-input" placeholder="NHẬP TÊN HOẶC NGÀY SINH (VD: TUAN ANH)" maxlength="16" oninput="updateEngraving(this.value)">
-          </div>
-          <p class="engrave-hint">Chữ sẽ được khắc dập chìm laser tinh xảo lên mặt lót Zermatt bên trong dây.</p>
-        </div>
-
-      </div>
-
-      <!-- Action Footer -->
-      <div class="config-footer">
-        <div class="price-row">
-          <div>
-            <span class="price-label">Tổng Chi Phí May Đo</span>
-            <div style="font-size: 10px; color: #16a34a; font-weight: 600; margin-top: 2px;">✔ Bảo hành da & chỉ 12 tháng</div>
-          </div>
-          <span class="price-amount" id="total-price">600.000₫</span>
-        </div>
-        <div class="action-btn-row">
-          <button class="btn-secondary" onclick="captureSnapshot()">
-            📸 Lưu Ảnh Phối
-          </button>
-          <button class="btn-primary" onclick="openCheckoutModal()">
-            ✨ ĐẶT MAY THỦ CÔNG
-          </button>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Modal Đặt Hàng -->
-  <div class="modal-backdrop" id="checkout-modal">
-    <div class="modal-box">
-      <button class="modal-close" onclick="closeCheckoutModal()">✕</button>
-      <h3 class="modal-title">Xác Nhận Đặt May Dây Da Percent</h3>
-      <p class="modal-desc">Đơn hàng may đo thủ công được chuyển thẳng về xưởng chế tác 18 bước của Percent. Nghệ nhân sẽ may đo theo đúng thông số 3D bạn vừa phối.</p>
-      
-      <div class="summary-card" id="summary-content">
-        <!-- JS fill -->
-      </div>
-
-      <div style="display: flex; gap: 10px;">
-        <button class="btn-primary" style="flex: 1;" onclick="sendOrderZalo()">
-          💬 Gửi Đơn Qua Zalo Xưởng
-        </button>
-        <button class="btn-secondary" style="flex: 1;" onclick="sendOrderShopDongHo()">
-          🛒 Thêm Vào Giỏ Hàng
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 3D Engine Script -->
-  <script>
-    // --- DATABASE SẢN PHẨM PERCENT CÓ SẴN (TEXTURE & NORMAL MAP TỰ ĐỘNG BÓC TÁCH TỪ ẢNH THẬT) ---
-    const LEATHER_CATALOG = [
-      { id: 'agon-soil', name: 'Percent Agon', color: 'Nâu đất Soil', price: 600000, img: 'img/p01.jpg', tex: 'img/tex_ai_gray.jpg', norm: 'img/tex_ai_normal.jpg', roughMap: 'img/tex_ai_roughness.jpg', hex: '#634E3F', roughness: 0.55 },
-      { id: 'karl-sepia', name: 'Percent Karl', color: 'Nâu hạt dẻ Sepia', price: 580000, img: 'img/p04.jpg', tex: 'img/tex_ai_gray.jpg', norm: 'img/tex_ai_normal.jpg', roughMap: 'img/tex_ai_roughness.jpg', hex: '#5E4842', roughness: 0.50 },
-      { id: 'bruno-gold', name: 'Percent Bruno', color: 'Vàng bò Gold', price: 580000, img: 'img/p05.jpg', tex: 'img/tex_ai_gray.jpg', norm: 'img/tex_ai_normal.jpg', roughMap: 'img/tex_ai_roughness.jpg', hex: '#876527', roughness: 0.60 },
-      { id: 'cosimo-navy', name: 'Percent Cosimo', color: 'Xanh Navy Ý', price: 580000, img: 'img/p08.jpg', tex: 'img/tex_ai_gray.jpg', norm: 'img/tex_ai_normal.jpg', roughMap: 'img/tex_ai_roughness.jpg', hex: '#1C252B', roughness: 0.45 },
-      { id: 'matteo-wine', name: 'Percent Matteo', color: 'Đỏ rượu Wine Red', price: 580000, img: 'img/p10.jpg', tex: 'img/tex_ai_gray.jpg', norm: 'img/tex_ai_normal.jpg', roughMap: 'img/tex_ai_roughness.jpg', hex: '#522421', roughness: 0.50 },
-      { id: 'knut-black', name: 'Percent Knut', color: 'Đen Cổ Điển', price: 520000, img: 'img/p03.jpg', tex: 'img/tex_ai_gray.jpg', norm: 'img/tex_ai_normal.jpg', roughMap: 'img/tex_ai_roughness.jpg', hex: '#2A2C2B', roughness: 0.55 },
-    ];
-
-    const STITCH_COLORS = [
-      { id: 'cream', name: 'Chỉ kem vintage', hex: '#EBE2D3' },
-      { id: 'matching', name: 'Chỉ tiệp màu da', hex: '#442f29' },
-      { id: 'white', name: 'Chỉ trắng thanh lịch', hex: '#FFFFFF' },
-      { id: 'black', name: 'Chỉ đen mạnh mẽ', hex: '#1C1C1C' },
-      { id: 'gold', name: 'Chỉ vàng bò', hex: '#D29B4A' }
-    ];
-
-    const BUCKLE_METALS = [
-      { id: 'silver', name: 'Bạc Inox', hex: '#D8D8D8', metalness: 0.95, roughness: 0.15 },
-      { id: 'gold', name: 'Vàng Gold', hex: '#E5B864', metalness: 0.95, roughness: 0.15 },
-      { id: 'rosegold', name: 'Vàng Hồng', hex: '#E2A995', metalness: 0.92, roughness: 0.18 },
-      { id: 'black', name: 'Đen PVD', hex: '#242424', metalness: 0.85, roughness: 0.25 }
-    ];
-
-    const WATCH_FACES = [
-      { id: 'classic_rolex', name: 'Đồng Hồ Classic Rolex', img: 'img/face_rolex.png' },
-      { id: 'smart_apple', name: 'Đồng Hồ Apple Watch', img: 'img/face_apple.png' },
-      { id: 'smart_round', name: 'Đồng Hồ Smart Round', img: 'img/face_smart.png' }
-    ];
-
-    // Trạng thái cấu hình hiện tại
-    const currentConfig = {
-      leather: LEATHER_CATALOG[0],
-      stitch: STITCH_COLORS[0],
-      buckleMetal: BUCKLE_METALS[0],
-      buckleType: 'tang', // tang or deployant
-      lugSize: '20 - 18 mm',
-      wristSize: '16.5 cm (Chuẩn 115/75mm)',
-      engraving: '',
-      showWatch: true,
-      watchFace: WATCH_FACES[0],
-      autoRotate: true
-    };
-
-    // --- THREE.JS SCENE SETUP ---
-    let scene, camera, renderer, controls;
-    let strapModel = null;
-    let strapGroup = new THREE.Group();
-    let strapMaterials = [];
-    let stitchMaterials = [];
-    let stitchMeshes = [];
-    let hardwareMaterials = [];
-    let watchGroup = null;
-    let loadedWatches = {};
-    let textureLoader;
-    let leatherTextures = {};
-    let leatherNormalMaps = {};
-    let currentLeatherColor = new THREE.Color();
-    
-    let engraveTextureCanvas, engraveTextureContext, engraveTexture;
-
-    const gltfLoader = new THREE.GLTFLoader();
-    const dracoLoader = new THREE.DRACOLoader();
-    dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/');
-    gltfLoader.setDRACOLoader(dracoLoader);
-
-    function init3D() {
-      const container = document.querySelector('.viewport-container');
-      const canvas = document.getElementById('webgl-canvas');
-
-      scene = new THREE.Scene();
-      scene.background = null;
-
-
-
-      camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
-      camera.position.set(0, 18, 28);
-
-      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
-      renderer.setSize(container.clientWidth, container.clientHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.25;
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-      // Setup HDRI Environment Map for realistic PBR lighting
-      const pmremGenerator = new THREE.PMREMGenerator(renderer);
-      pmremGenerator.compileEquirectangularShader();
-      new THREE.RGBELoader()
-        .setDataType(THREE.UnsignedByteType)
-        .load('https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/royal_esplanade_1k.hdr', function (texture) {
-          const envMap = pmremGenerator.fromEquirectangular(texture).texture;
-          scene.environment = envMap;
-          texture.dispose();
-          pmremGenerator.dispose();
-        });
-
-      controls = new THREE.OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = true;
-      controls.dampingFactor = 0.05;
-      controls.maxDistance = 55;
-      controls.minDistance = 12;
-      controls.autoRotate = true;
-      controls.autoRotateSpeed = 2.0;
-      controls.maxPolarAngle = Math.PI / 2 + 0.1;
-      controls.target.set(0, 0, 0);
-
-      // --- STUDIO LIGHTING SYSTEM ---
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-      scene.add(ambientLight);
-
-      const keyLight = new THREE.DirectionalLight(0xffffff, 1.3);
-      keyLight.position.set(15, 25, 20);
-      keyLight.castShadow = true;
-      keyLight.shadow.mapSize.width = 2048;
-      keyLight.shadow.mapSize.height = 2048;
-      scene.add(keyLight);
-
-      const fillLight = new THREE.DirectionalLight(0xf5ebe0, 0.8);
-      fillLight.position.set(-20, 15, -15);
-      scene.add(fillLight);
-
-      const rimLight = new THREE.DirectionalLight(0xfff0dd, 0.6);
-      rimLight.position.set(0, -10, 15);
-      scene.add(rimLight);
-
-      // Sàn bóng đổ mờ ảo
-      const floorGeo = new THREE.PlaneGeometry(100, 100);
-      const floorMat = new THREE.ShadowMaterial({ opacity: 0.15 });
-      const floor = new THREE.Mesh(floorGeo, floorMat);
-      floor.rotation.x = -Math.PI / 2;
-      floor.position.y = -6;
-      floor.receiveShadow = true;
-      scene.add(floor);
-
-      // Texture loader
-      textureLoader = new THREE.TextureLoader();
-
-      // Canvas động cho chữ khắc Laser
-      initEngraveCanvas();
-
-      scene.add(strapGroup);
-
-      // Tải mô hình dây da
-      buildWatchAndStrap();
-
-      // Render loop
-      animate();
-
-      window.addEventListener('resize', onWindowResize);
-    }
-
-    // --- CANVAS TỰ ĐỘNG VẼ CHỮ KHẮC LASER 3D ---
-    function initEngraveCanvas() {
-      engraveTextureCanvas = document.createElement('canvas');
-      engraveTextureCanvas.width = 512;
-      engraveTextureCanvas.height = 128;
-      engraveTextureContext = engraveTextureCanvas.getContext('2d');
-      engraveTexture = new THREE.CanvasTexture(engraveTextureCanvas);
-      updateEngraveTextureText('');
-    }
-
-    function updateEngraveTextureText(text) {
-      const ctx = engraveTextureContext;
-      ctx.fillStyle = '#C8B293'; // Màu da lót Zermatt
-      ctx.fillRect(0, 0, 512, 128);
-
-      if (text) {
-        ctx.fillStyle = '#6E5539'; // Dập chìm màu sẫm
-        ctx.font = 'bold 36px "Be Vietnam Pro", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.letterSpacing = '4px';
-        ctx.fillText(text.toUpperCase(), 256, 64);
-      }
-      engraveTexture.needsUpdate = true;
-    }
-
-    // --- DỰNG PROCEDURAL 3D MESH DÂY DA & KHÓA (KHÔNG CẦN BLENDER) ---
-    function buildWatchAndStrap() {
-      strapGroup = new THREE.Group();
-      scene.add(strapGroup);
-
-      // Khởi tạo danh sách material để update sau này
-      strapMaterials = [];
-      stitchMaterials = [];
-      hardwareMaterials = [];
-      stitchMeshes = [];
-
-      // Tạo vật liệu da ban đầu
-      const leatherMaterial = createLeatherMaterial(currentConfig.leather);
-      strapMaterials.push(leatherMaterial);
-
-      // 1. DÂY NGẮN (Short Strap - Buckle Side)
-      const shortCurve = new THREE.CubicBezierCurve3(
-        new THREE.Vector3(0, 0, 3.8),     // Chân lug đồng hồ
-        new THREE.Vector3(0, -0.8, 6.5),  // Bo cong theo cổ tay
-        new THREE.Vector3(0, -2.5, 9.5),  // Thân giữa
-        new THREE.Vector3(0, -4.5, 12.0)  // Chân khóa
-      );
-      shortStrapMesh = createCurvedStrapMesh(shortCurve, 2.0, 1.8, 0.32, leatherMaterial);
-      shortStrapMesh.castShadow = true;
-      strapGroup.add(shortStrapMesh);
-
-      // 2. DÂY DÀI (Long Strap - Tail Side)
-      const longCurve = new THREE.CubicBezierCurve3(
-        new THREE.Vector3(0, 0, -3.8),     // Chân lug trên
-        new THREE.Vector3(0, -0.8, -7.5),  // Bo cong ôm tay
-        new THREE.Vector3(0, -3.2, -12.0), // Thân có lỗ
-        new THREE.Vector3(0, -5.8, -16.5)  // Đuôi nhọn
-      );
-      longStrapMesh = createCurvedStrapMesh(longCurve, 2.0, 1.75, 0.32, leatherMaterial, true);
-      longStrapMesh.castShadow = true;
-      strapGroup.add(longStrapMesh);
-
-      // 3. ĐỤC 7 LỖ KIM TRÊN DÂY DÀI
-      createStrapHoles(strapGroup);
-
-      // 4. ĐƯỜNG CHỈ MAY SADDLE STITCH VIỀN
-      createStitching(shortCurve, longCurve);
-
-      // 5. BỘ KHÓA KIM & ĐỈA DA
-      buildBuckleAndKeepers(strapGroup, shortCurve.getPoint(1));
-
-      // 6. MẶT ĐỒNG HỒ MẪU (Watch Case)
-      buildWatchCase();
-
-      // Cập nhật góc ban đầu
-      strapGroup.rotation.y = Math.PI / 4;
-    }
-
-    // Hàm tạo thân dây uốn cong mượt mà theo đường cong Bezier
-    function createCurvedStrapMesh(curve, widthStart, widthEnd, thickness, material, isPointed = false) {
-      const segments = 36;
-      const points = curve.getPoints(segments);
-      const geom = new THREE.BufferGeometry();
-
-      const vertices = [];
-      const normals = [];
-      const uvs = [];
-      const indices = [];
-
-      for (let i = 0; i <= segments; i++) {
-        const t = i / segments;
-        const p = points[i];
-        const w = (widthStart + (widthEnd - widthStart) * t) / 2;
-        
-        // Đỉnh đuôi nhọn ở cuối nếu là dây dài
-        const currentW = (isPointed && i === segments) ? 0.05 : w;
-
-        // Vector tiếp tuyến & pháp tuyến
-        const tangent = curve.getTangent(t).normalize();
-        const normal = new THREE.Vector3(0, 1, 0);
-        const side = new THREE.Vector3().crossVectors(tangent, normal).normalize();
-
-        // 4 đỉnh mặt cắt (Top-Left, Top-Right, Bottom-Left, Bottom-Right)
-        const tl = p.clone().addScaledVector(side, -currentW).addScaledVector(normal, thickness / 2);
-        const tr = p.clone().addScaledVector(side, currentW).addScaledVector(normal, thickness / 2);
-        const bl = p.clone().addScaledVector(side, -currentW).addScaledVector(normal, -thickness / 2);
-        const br = p.clone().addScaledVector(side, currentW).addScaledVector(normal, -thickness / 2);
-
-        vertices.push(tl.x, tl.y, tl.z,  tr.x, tr.y, tr.z,  bl.x, bl.y, bl.z,  br.x, br.y, br.z);
-        normals.push(0, 1, 0,  0, 1, 0,  0, -1, 0,  0, -1, 0);
-        uvs.push(0, t,  1, t,  0, t,  1, t);
-
-        if (i < segments) {
-          const base = i * 4;
-          // Mặt trên
-          indices.push(base, base + 1, base + 5,  base, base + 5, base + 4);
-          // Mặt dưới
-          indices.push(base + 2, base + 6, base + 7,  base + 2, base + 7, base + 3);
-          // Viền trái (Sơn cạnh)
-          indices.push(base, base + 4, base + 6,  base, base + 6, base + 2);
-          // Viền phải (Sơn cạnh)
-          indices.push(base + 1, base + 3, base + 7,  base + 1, base + 7, base + 5);
-        }
-      }
-
-      geom.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-      geom.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
-      geom.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-      geom.setIndex(indices);
-      geom.computeVertexNormals();
-
-      return new THREE.Mesh(geom, material);
-    }
-
-    // Đục 7 lỗ xỏ kim tinh xảo
-    function createStrapHoles(group) {
-      const holeMaterial = new THREE.MeshBasicMaterial({ color: 0x1A1410 });
-      for (let i = 0; i < 7; i++) {
-        const holeGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.38, 16);
-        const hole = new THREE.Mesh(holeGeo, holeMaterial);
-        // Định vị dọc theo đuôi dây dài
-        hole.position.set(0, -2.5 - i * 0.42, -10.5 - i * 0.85);
-        hole.rotation.x = 0.3;
-        group.add(hole);
-      }
-    }
-
-    // Dựng đường chỉ khâu tay nổi 3D
-    function createStitching(shortCurve, longCurve) {
-      const stitchMat = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(currentConfig.stitch.hex),
-        roughness: 0.8,
-        metalness: 0.05
-      });
-      stitchMaterials.push(stitchMat);
-
-      function addStitchLine(curve, sideOffset, widthStart, widthEnd) {
-        const count = 28;
-        for (let i = 2; i < count; i++) {
-          const t = i / count;
-          const p = curve.getPoint(t);
-          const tangent = curve.getTangent(t).normalize();
-          const normal = new THREE.Vector3(0, 1, 0);
-          const side = new THREE.Vector3().crossVectors(tangent, normal).normalize();
-          const w = (widthStart + (widthEnd - widthStart) * t) / 2 - 0.14;
-
-          const stitchGeo = new THREE.BoxGeometry(0.04, 0.035, 0.16);
-          const stitch = new THREE.Mesh(stitchGeo, stitchMat);
-          
-          const pos = p.clone().addScaledVector(side, sideOffset * w).addScaledVector(normal, 0.17);
-          stitch.position.copy(pos);
-          stitch.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), tangent);
-          stitch.rotation.y += (i % 2 === 0 ? 0.15 : -0.15); // Góc đan chỉ chéo thủ công
-          strapGroup.add(stitch);
-          stitchMeshes.push(stitch);
-        }
-      }
-
-      addStitchLine(shortCurve, -1, 2.0, 1.8);
-      addStitchLine(shortCurve, 1, 2.0, 1.8);
-      addStitchLine(longCurve, -1, 2.0, 1.75);
-      addStitchLine(longCurve, 1, 2.0, 1.75);
-    }
-
-    // Dựng Khóa kim & Đỉa da thật
-    function buildBuckleAndKeepers(group, bucklePos) {
-      buckleGroup = new THREE.Group();
-
-      const metalMat = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(currentConfig.buckleMetal.hex),
-        metalness: currentConfig.buckleMetal.metalness,
-        roughness: currentConfig.buckleMetal.roughness
-      });
-      hardwareMaterials.push(metalMat);
-
-      // 1. Khung khóa chữ U
-      const frameGeo = new THREE.TorusGeometry(0.95, 0.09, 12, 24, Math.PI);
-      const frame = new THREE.Mesh(frameGeo, metalMat);
-      frame.rotation.x = Math.PI / 2;
-      frame.position.set(0, 0, 0.3);
-      buckleGroup.add(frame);
-
-      // Chốt ngang
-      const barGeo = new THREE.CylinderGeometry(0.06, 0.06, 1.9, 16);
-      const bar = new THREE.Mesh(barGeo, metalMat);
-      bar.rotation.z = Math.PI / 2;
-      buckleGroup.add(bar);
-
-      // Kim khóa
-      const tongueGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.1, 12);
-      const tongue = new THREE.Mesh(tongueGeo, metalMat);
-      tongue.position.set(0, 0.08, 0.45);
-      tongue.rotation.x = -Math.PI / 2 - 0.2;
-      buckleGroup.add(tongue);
-
-      // 2. Hai con đỉa da (Fixed & Floating Keepers)
-      const keeperMat = createLeatherMaterial(currentConfig.leather);
-      strapMaterials.push(keeperMat);
-      
-      const keeperGeo = new THREE.TorusGeometry(1.05, 0.12, 8, 20);
-
-      const fixedKeeper = new THREE.Mesh(keeperGeo, keeperMat);
-      fixedKeeper.scale.set(1, 0.45, 1);
-      fixedKeeper.rotation.x = Math.PI / 2;
-      fixedKeeper.position.set(0, 0, -0.8);
-      buckleGroup.add(fixedKeeper);
-
-      const floatKeeper = new THREE.Mesh(keeperGeo, keeperMat);
-      floatKeeper.scale.set(1, 0.45, 1);
-      floatKeeper.rotation.x = Math.PI / 2;
-      floatKeeper.position.set(0, 0, -1.8);
-      buckleGroup.add(floatKeeper);
-
-      // Định vị toàn bộ cụm khóa vào đầu dây ngắn
-      buckleGroup.position.copy(bucklePos);
-      buckleGroup.position.y += 0.05;
-      buckleGroup.rotation.x = 0.55;
-      group.add(buckleGroup);
-    }
-
-
-
-    // Lấy map để load roughness
-    const leatherRoughnessMaps = {};
-
-    // Tạo Material PBR từ ảnh da thật của Percent kèm vân Normal Map
-    function createLeatherMaterial(leatherItem) {
-      if (!leatherTextures[leatherItem.id]) {
-        const texPath = leatherItem.tex || leatherItem.img;
-        const tex = textureLoader.load(texPath);
-        tex.wrapS = THREE.RepeatWrapping;
-        tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(2.0, 6.0);
-        leatherTextures[leatherItem.id] = tex;
-      }
-
-      if (leatherItem.norm && !leatherNormalMaps[leatherItem.id]) {
-        const norm = textureLoader.load(leatherItem.norm);
-        norm.wrapS = THREE.RepeatWrapping;
-        norm.wrapT = THREE.RepeatWrapping;
-        norm.repeat.set(2.0, 6.0);
-        leatherNormalMaps[leatherItem.id] = norm;
-      }
-
-      if (leatherItem.roughMap && !leatherRoughnessMaps[leatherItem.id]) {
-        const rough = textureLoader.load(leatherItem.roughMap);
-        rough.wrapS = THREE.RepeatWrapping;
-        rough.wrapT = THREE.RepeatWrapping;
-        rough.repeat.set(2.0, 6.0);
-        leatherRoughnessMaps[leatherItem.id] = rough;
-      }
-
-      const mat = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(leatherItem.hex),
-        map: leatherTextures[leatherItem.id],
-        normalMap: leatherNormalMaps[leatherItem.id] || null,
-        normalScale: new THREE.Vector2(0.85, 0.85),
-        roughnessMap: leatherRoughnessMaps[leatherItem.id] || null,
-        roughness: leatherItem.roughMap ? 1.0 : leatherItem.roughness,
-        metalness: 0.05
-      });
-
-      return mat;
-    }
-
-
-    
-    let watchDialMaterial = null;
-    function buildWatchCase() {
-        if(watchGroup) {
-            scene.remove(watchGroup);
-        }
-        watchGroup = new THREE.Group();
-        watchGroup.position.set(0, 0, 0.4); 
-        watchGroup.rotation.z = -Math.PI / 2;
-
-        const caseMetalMat = new THREE.MeshStandardMaterial({
-            color: 0xffffff, metalness: 1.0, roughness: 0.1
-        });
-
-        watchDialMaterial = new THREE.MeshPhysicalMaterial({ 
-            color: 0xffffff, metalness: 0.1, roughness: 0.5
-        });
-
-        // Vỏ tròn
-        const caseGeo = new THREE.CylinderGeometry(3.6, 3.6, 0.9, 48);
-        const watchCase = new THREE.Mesh(caseGeo, caseMetalMat);
-        watchCase.rotation.x = Math.PI / 2;
-        watchCase.castShadow = true;
-        watchGroup.add(watchCase);
-
-        // Mặt Dial
-        const dialGeo = new THREE.CircleGeometry(3.3, 48);
-        const dial = new THREE.Mesh(dialGeo, watchDialMaterial);
-        dial.position.z = 0.46;
-        watchGroup.add(dial);
-        
-        // Mặt kính (Kính lồi)
-        const glassGeo = new THREE.CylinderGeometry(3.3, 3.3, 0.1, 48);
-        const glassMat = new THREE.MeshPhysicalMaterial({
-            color: 0xffffff, transmission: 0.95, opacity: 1, transparent: true, roughness: 0, ior: 1.5
-        });
-        const glass = new THREE.Mesh(glassGeo, glassMat);
-        glass.rotation.x = Math.PI / 2;
-        glass.position.z = 0.55;
-        watchGroup.add(glass);
-
-        // 4 chân Càng Lug
-        for (let side of [-1, 1]) {
-            for (let end of [-1, 1]) {
-                const lugGeo = new THREE.BoxGeometry(0.3, 0.45, 1.1);
-                const lug = new THREE.Mesh(lugGeo, caseMetalMat);
-                lug.position.set(side * 1.15, 0, end * 3.7);
-                watchGroup.add(lug);
-            }
-        }
-        scene.add(watchGroup);
-        watchGroup.visible = currentConfig.showWatch;
-    }
-
-    function loadWatchFace(faceConfig) {
-        if (!faceConfig || !currentConfig.showWatch) return;
-        if (!watchGroup) buildWatchCase();
-        
-        watchGroup.visible = true;
-        textureLoader.load(faceConfig.img, (tex) => {
-            tex.colorSpace = THREE.SRGBColorSpace;
-            tex.center.set(0.5, 0.5);
-            watchDialMaterial.map = tex;
-            watchDialMaterial.needsUpdate = true;
-        });
-    }
-
-
-    function update3D() {
-        if (!strapGroup || strapGroup.children.length === 0) return;
-
-        const tex = textureLoader.load(currentConfig.leather.tex || currentConfig.leather.img);
-        const norm = currentConfig.leather.norm ? textureLoader.load(currentConfig.leather.norm) : null;
-        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-        if(norm) norm.wrapS = norm.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(1.5, 1.5);
-        if(norm) norm.repeat.set(1.5, 1.5);
-
-        const img = new Image();
-        img.src = currentConfig.leather.tex || currentConfig.leather.img;
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = img.width; canvas.height = img.height;
-            ctx.drawImage(img, 0, 0);
-            const data = ctx.getImageData(0,0,img.width,img.height).data;
-            let r=0, g=0, b=0;
-            for(let i=0; i<data.length; i+=4){ r+=data[i]; g+=data[i+1]; b+=data[i+2]; }
-            const cnt = data.length/4;
-            currentLeatherColor.setRGB(r/cnt/255, g/cnt/255, b/cnt/255);
-            updateStitch();
-        };
-
-        strapMaterials.forEach(m => {
-            m.map = tex;
-            if(norm) {
-                m.normalMap = norm;
-                if(m.normalScale) m.normalScale.set(1.2, 1.2);
-            }
-            m.color.setHex(0xffffff);
-            m.roughness = currentConfig.leather.roughness || 0.65;
-            m.needsUpdate = true;
-        });
-
-        hardwareMaterials.forEach(m => {
-            m.color.set(currentConfig.buckleMetal.hex);
-            m.metalness = currentConfig.buckleMetal.metalness;
-            m.roughness = currentConfig.buckleMetal.roughness;
-            m.needsUpdate = true;
-        });
-    }
-
-    function updateStitch() {
-        if (!strapGroup || strapGroup.children.length === 0) return;
-        const sColor = currentConfig.stitch.id === 'matching' ? currentLeatherColor : new THREE.Color(currentConfig.stitch.hex);
-        stitchMaterials.forEach(m => {
-            m.color = sColor;
-            m.needsUpdate = true;
-        });
-    }
-    
-    // Render loop
-    function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    }
-
-    function onWindowResize() {
-      const container = document.querySelector('.viewport-container');
-      camera.aspect = container.clientWidth / container.clientHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(container.clientWidth, container.clientHeight);
-    }
-
-    // --- CÁC HÀM TƯƠNG TÁC CONFIGURATOR ---
-    function selectLeather(leatherId) {
-      const item = LEATHER_CATALOG.find(l => l.id === leatherId);
-      if (!item) return;
-      currentConfig.leather = item;
-
-      // Cập nhật 3D
-      update3D();
-
-      // Cập nhật UI
-      document.getElementById('val-leather').innerText = `${item.name} (${item.color})`;
-      document.querySelectorAll('.leather-card').forEach(c => {
-        c.classList.toggle('active', c.dataset.id === leatherId);
-      });
-
-      updatePrice();
-    }
-
-    function selectStitch(stitchId) {
-      const item = STITCH_COLORS.find(s => s.id === stitchId);
-      if (!item) return;
-      currentConfig.stitch = item;
-
-      updateStitch();
-
-      document.getElementById('val-stitch').innerText = item.name;
-      document.querySelectorAll('.stitch-swatch').forEach(s => {
-        s.classList.toggle('active', s.dataset.id === stitchId);
-      });
-    }
-
-    function selectBuckleMetal(metalId) {
-      const item = BUCKLE_METALS.find(m => m.id === metalId);
-      if (!item) return;
-      currentConfig.buckleMetal = item;
-
-      update3D();
-
-      document.getElementById('val-buckle').innerText = `${item.name} (${currentConfig.buckleType === 'tang' ? 'Khóa kim' : 'Khóa bướm'})`;
-      document.querySelectorAll('.buckle-card').forEach(b => {
-        b.classList.toggle('active', b.dataset.id === metalId);
-      });
-    }
-
-    function setBuckleType(type, el) {
-      currentConfig.buckleType = type;
-      el.parentElement.querySelectorAll('.size-pill').forEach(p => p.classList.remove('active'));
-      el.classList.add('active');
-      selectBuckleMetal(currentConfig.buckleMetal.id);
-      updatePrice();
-    }
-
-    function setLugSize(size, el) {
-      currentConfig.lugSize = size;
-      el.parentElement.querySelectorAll('.size-pill').forEach(p => p.classList.remove('active'));
-      el.classList.add('active');
-      document.getElementById('val-lug').innerText = size;
-    }
-
-    function setWristSize(size, el) {
-      currentConfig.wristSize = size;
-      el.parentElement.querySelectorAll('.size-pill').forEach(p => p.classList.remove('active'));
-      el.classList.add('active');
-      document.getElementById('val-wrist').innerText = size;
-    }
-
-    function updateEngraving(text) {
-      currentConfig.engraving = text;
-      updateEngraveTextureText(text);
-    }
-
-    function updatePrice() {
-      let total = currentConfig.leather.price;
-      if (currentConfig.buckleType === 'deployant') {
-        total += 150000;
-      }
-      document.getElementById('total-price').innerText = new Intl.NumberFormat('vi-VN').format(total) + '₫';
-    }
-
-    // --- CÁC GÓC NHÌN CAMERA PRESET ---
-    function setCameraView(preset) {
-      document.querySelectorAll('.camera-presets .vp-btn').forEach(b => b.classList.remove('active'));
-      if(event) event.target.classList.add('active');
-
-      switch(preset) {
-        case 'overview':
-          animateCamera(0, 18, 28, 0, 0, 0);
-          break;
-        case 'buckle':
-          animateCamera(0, 5, 20, 0, -4, 12);
-          break;
-        case 'tail':
-          animateCamera(0, 2, -22, 0, -5, -14);
-          break;
-        case 'lining':
-          animateCamera(0, -18, 15, 0, 0, 0);
-          break;
-      }
-    }
-
-    function animateCamera(x, y, z, tx, ty, tz) {
-      const startPos = camera.position.clone();
-      const endPos = new THREE.Vector3(x, y, z);
-      const startTarget = controls.target.clone();
-      const endTarget = new THREE.Vector3(tx, ty, tz);
-
-      let progress = 0;
-      function step() {
-        progress += 0.04;
-        if (progress <= 1) {
-          camera.position.lerpVectors(startPos, endPos, progress);
-          controls.target.lerpVectors(startTarget, endTarget, progress);
-          requestAnimationFrame(step);
-        } else {
-          camera.position.copy(endPos);
-          controls.target.copy(endTarget);
-        }
-      }
-      step();
-    }
-
-    function toggleWatchCase() {
-      currentConfig.showWatch = !currentConfig.showWatch;
-      const btn = document.getElementById('btn-toggle-watch');
-      btn.innerText = `⌚ Ướm Đồng Hồ: ${currentConfig.showWatch ? 'BẬT' : 'TẮT'}`;
-      btn.classList.toggle('active', currentConfig.showWatch);
-      
-      if(currentConfig.showWatch) {
-          loadWatchFace(currentConfig.watchFace);
-      } else if(watchGroup) {
-          watchGroup.visible = false;
-      }
-    }
-    
-    function setWatchFace(faceId, el) {
-        const face = WATCH_FACES.find(f => f.id === faceId);
-        if(!face) return;
-        currentConfig.watchFace = face;
-        
-        document.getElementById('val-watchface').innerText = face.name;
-        document.querySelectorAll('.watchface-pill').forEach(p => p.classList.remove('active'));
-        if(el) el.classList.add('active');
-        else if(typeof event !== 'undefined' && event && event.target) event.target.classList.add('active');
-        
-        if(currentConfig.showWatch) {
-            loadWatchFace(face);
-        }
-    }
-    
-
-    function toggleAutoRotate() {
-      currentConfig.autoRotate = !currentConfig.autoRotate;
-      const btn = document.getElementById('btn-toggle-rotate');
-      if (btn) btn.classList.toggle('active', currentConfig.autoRotate);
-      controls.autoRotate = currentConfig.autoRotate;
-    }
-
-    // Chụp snapshot tải về
-    function captureSnapshot() {
-      renderer.render(scene, camera);
-      const dataURL = renderer.domElement.toDataURL('image/png');
-      const a = document.createElement('a');
-      a.href = dataURL;
-      a.download = `percent-3d-${currentConfig.leather.id}.png`;
-      a.click();
-      confetti({ particleCount: 50, spread: 60, origin: { y: 0.8 } });
-    }
-
-    // Modal Checkout
-    function openCheckoutModal() {
-      let total = currentConfig.leather.price + (currentConfig.buckleType === 'deployant' ? 150000 : 0);
-      const html = `
-        <div class="summary-row"><span class="summary-label">Mẫu Dây Da:</span><span class="summary-val">${currentConfig.leather.name} (${currentConfig.leather.color})</span></div>
-        <div class="summary-row"><span class="summary-label">Màu Chỉ May:</span><span class="summary-val">${currentConfig.stitch.name}</span></div>
-        <div class="summary-row"><span class="summary-label">Kiểu Khóa:</span><span class="summary-val">${currentConfig.buckleType === 'tang' ? 'Khóa Kim' : 'Khóa Bướm'} (${currentConfig.buckleMetal.name})</span></div>
-        <div class="summary-row"><span class="summary-label">Size Dây:</span><span class="summary-val">${currentConfig.lugSize}</span></div>
-        <div class="summary-row"><span class="summary-label">Chu Vi Tay:</span><span class="summary-val">${currentConfig.wristSize}</span></div>
-        <div class="summary-row"><span class="summary-label">Khắc Laser:</span><span class="summary-val">${currentConfig.engraving || 'Không khắc'}</span></div>
-        <div class="summary-row" style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--pc-border); font-size: 14px;"><span class="summary-label" style="font-weight: 700; color: var(--pc-espresso);">Tổng Thanh Toán:</span><span class="summary-val" style="color: var(--pc-cognac); font-size: 16px;">${new Intl.NumberFormat('vi-VN').format(total)}₫</span></div>
-      `;
-      document.getElementById('summary-content').innerHTML = html;
-      document.getElementById('checkout-modal').style.display = 'flex';
-      confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
-    }
-
-    function closeCheckoutModal() {
-      document.getElementById('checkout-modal').style.display = 'none';
-    }
-
-    function sendOrderZalo() {
-      const msg = `Xin chào Percent! Tôi muốn đặt may bộ dây da 3D:
-- Dòng: ${currentConfig.leather.name} (${currentConfig.leather.color})
-- Chỉ: ${currentConfig.stitch.name}
-- Khóa: ${currentConfig.buckleType === 'tang' ? 'Khóa Kim' : 'Khóa Bướm'} (${currentConfig.buckleMetal.name})
-- Size lug: ${currentConfig.lugSize} | Cổ tay: ${currentConfig.wristSize}
-- Khắc tên: ${currentConfig.engraving || 'Không'}
-Nhờ xưởng tư vấn và chế tác giúp tôi!`;
-      window.open(`https://zalo.me/0902678910?text=${encodeURIComponent(msg)}`, '_blank');
-    }
-
-    function sendOrderShopDongHo() {
-      alert('Đã đóng gói dữ liệu cấu hình 3D! Trong bản live trên web, thông số này sẽ tự động chuyển thẳng vào giỏ hàng WooCommerce của shopdongho.com.');
-    }
-
-    // --- RENDER GIAO DIỆN KHỞI TẠO ---
-    function renderUI() {
-      // 1. Grid da
-      const lGrid = document.getElementById('leather-grid');
-      lGrid.innerHTML = LEATHER_CATALOG.map((l, idx) => `
-        <div class="leather-card ${idx === 0 ? 'active' : ''}" data-id="${l.id}" onclick="selectLeather('${l.id}')">
-          <div class="leather-img-wrap">
-            <img src="${l.img}" alt="${l.name}">
-          </div>
-          <div class="leather-name">${l.name.replace('Percent ', '')}</div>
-          <div class="leather-color-tag">${l.color}</div>
-          <div class="leather-price">${new Intl.NumberFormat('vi-VN').format(l.price)}₫</div>
-        </div>
-      `).join('');
-
-      // 2. Swatch chỉ may
-      const sGroup = document.getElementById('stitch-group');
-      sGroup.innerHTML = STITCH_COLORS.map((s, idx) => `
-        <div class="stitch-swatch ${idx === 0 ? 'active' : ''}" data-id="${s.id}" onclick="selectStitch('${s.id}')">
-          <div class="stitch-dot" style="background: ${s.hex};"></div>
-          <span class="stitch-label">${s.name.split(' ')[1] || s.name}</span>
-        </div>
-      `).join('');
-
-      // 3. Grid khóa
-      const bGrid = document.getElementById('buckle-grid');
-      bGrid.innerHTML = BUCKLE_METALS.map((b, idx) => `
-        <div class="buckle-card ${idx === 0 ? 'active' : ''}" data-id="${b.id}" onclick="selectBuckleMetal('${b.id}')">
-          <div class="buckle-metal-pill" style="background: ${b.hex};"></div>
-          <div class="buckle-name">${b.name}</div>
-        </div>
-      `).join('');
-    }
-
-    // Khởi động khi tải xong trang
-    window.addEventListener('DOMContentLoaded', () => {
-      renderUI();
-      init3D();
-      updatePrice();
-    });
-  </script>
-</body>
-</html>
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dây Da Đồng Hồ Thủ Công PERCENT – 1.200+ Mẫu, 32 Loại Da | Demo</title><meta name="description" content="Dây da đồng hồ handmade Percent: 1.200+ mẫu, 32 loại da nhập khẩu Ý-Pháp, đủ 14 size 10-24mm, giá từ 500.000đ, bảo hành 12 tháng, lắp miễn phí tại 6 showroom."><meta name="robots" content="noindex"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet"><style>/* ===================================================================
+   PERCENT — Landing block CSS v2  (dán vào Customize → CSS bổ sung)
+   Palette thương hiệu: cream #F6F0E5 · nâu #5E4636 · nâu đậm #3d3025
+   · dark #2e241c · thẻ trắng #fff · line #e7ddcc. Font: Playfair + Georgia.
+   WP-safe: màu hardcode + !important, không > , không :not() chuỗi,
+   không clamp() ở layout, namespace .pc, responsive bằng @media.
+   =================================================================== */
+
+.pc-wrap{max-width:1180px;margin:0 auto !important;padding:0 16px;color:#4a3a2e !important;font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.6;box-sizing:border-box}
+.pc-wrap *{box-sizing:border-box}
+.pc-wrap img{max-width:100%;height:auto;display:block}
+.pc-wrap a{text-decoration:none}
+
+/* ---- Typography ---- */
+.pc-eyebrow{display:inline-block;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#5E4636 !important;font-weight:700;margin-bottom:14px}
+.pc-eyebrow-light{color:#cBA888 !important}
+.pc-h1{font-family:"Playfair Display",Georgia,"Times New Roman",serif;font-weight:700;font-size:50px;line-height:1.1;letter-spacing:-.5px;color:#3d3025 !important;margin:0 0 18px}
+.pc-h2{font-family:"Playfair Display",Georgia,"Times New Roman",serif;font-weight:700;font-size:34px;line-height:1.18;color:#3d3025 !important;margin:0 0 14px}
+.pc-h2-light{color:#F6F0E5 !important}
+.pc-lead{font-size:18px;color:#5E4636 !important;margin:0 0 26px;max-width:520px}
+.pc-p{font-size:16px;color:#6a5a4a !important;margin:0 0 18px}
+.pc-sub{font-size:16px;color:#7c6a5a !important;margin:6px 0 0;max-width:640px}
+.pc-head{text-align:center;margin:0 auto 38px;max-width:720px}
+.pc-link{display:inline-block;margin-top:8px;font-size:15px;font-weight:700;color:#5E4636 !important;border-bottom:1px solid #c9b8a6;padding-bottom:2px}
+.pc-link:hover{color:#3d3025 !important;border-color:#5E4636}
+
+/* ---- Buttons ---- */
+.pc-btns{display:flex;flex-wrap:wrap;gap:14px}
+.pc-btns-center{justify-content:center}
+.pc-btn{display:inline-block;padding:15px 30px;border-radius:6px;font-size:15px;font-weight:700;letter-spacing:.3px;border:2px solid transparent;transition:all .2s ease;cursor:pointer}
+.pc-btn-sm{padding:12px 22px;font-size:14px;margin-top:18px}
+.pc-btn-solid{background:#5E4636 !important;color:#fff !important;border-color:#5E4636 !important}
+.pc-btn-solid:hover{background:#3d3025 !important;border-color:#3d3025 !important}
+.pc-btn-cream{background:#F6F0E5 !important;color:#3d3025 !important;border-color:#F6F0E5 !important}
+.pc-btn-cream:hover{background:#fff !important;border-color:#fff !important}
+.pc-btn-ghost-light{background:transparent !important;color:#f2e7d6 !important;border-color:#7a6450 !important}
+.pc-btn-ghost-light:hover{background:#46362a !important;border-color:#a98a6f !important}
+
+/* ---- Section spacing ---- */
+.pc-section{padding:62px 0}
+
+/* ---- HERO ---- */
+.pc-hero{background:#2e241c !important;border-radius:14px;margin-top:18px;padding:0;overflow:hidden}
+.pc-hero-grid{display:grid;grid-template-columns:1.12fr .88fr !important;align-items:center}
+.pc-hero-copy{padding:60px 50px}
+.pc-hero-copy .pc-h1{color:#F6F0E5 !important}
+.pc-hero-copy .pc-lead{color:#cbb9a6 !important}
+.pc-hero-meta{margin:26px 0 0;font-size:13px;letter-spacing:.4px;color:#9c8770 !important}
+.pc-hero-media{height:100%;min-height:420px;background:#251c15}
+.pc-hero-media img{width:100%;height:100%;min-height:420px;object-fit:cover}
+
+/* ---- TRUST BAR ---- */
+.pc-trust{display:grid;grid-template-columns:1fr 1fr 1fr 1fr !important;gap:10px;background:#fff !important;border:1px solid #e7ddcc;border-radius:10px;margin-top:16px;padding:18px 20px}
+.pc-trust-item{display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:600;color:#4a3a2e !important;text-align:center}
+.pc-tick{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#5E4636 !important;color:#fff !important;font-size:12px;flex:0 0 auto}
+
+/* ---- PHILOSOPHY / QUOTE ---- */
+.pc-quote{text-align:center;max-width:860px;margin:0 auto}
+.pc-logo{height:54px;width:auto;margin:0 auto 26px;display:block}
+.pc-quote-lg{font-family:"Playfair Display",Georgia,serif;font-size:28px;line-height:1.45;font-style:italic;color:#3d3025 !important;margin:0 0 22px}
+.pc-quote-sm{font-size:17px;line-height:1.7;color:#6a5a4a !important;margin:0 auto 28px;max-width:680px}
+.pc-quote-sig{font-family:"Playfair Display",Georgia,serif;font-size:15px;font-weight:700;letter-spacing:3px;color:#5E4636 !important}
+
+/* ---- CRAFT ---- */
+.pc-craft-grid{display:grid;grid-template-columns:.9fr 1.1fr !important;gap:48px;align-items:center}
+.pc-craft-media img{border-radius:12px;width:100%;object-fit:cover;border:1px solid #e7ddcc}
+.pc-cstats{display:grid;grid-template-columns:1fr 1fr 1fr !important;gap:14px;margin:22px 0 4px;padding:18px 0;border-top:1px solid #e7ddcc;border-bottom:1px solid #e7ddcc}
+.pc-cstat b{display:block;font-family:"Playfair Display",Georgia,serif;font-size:26px;color:#5E4636 !important;line-height:1.1}
+.pc-cstat span{font-size:12.5px;color:#8a7461 !important;letter-spacing:.3px}
+.pc-feats{display:grid;grid-template-columns:1fr !important;gap:18px;margin-top:22px}
+.pc-feat{display:flex;gap:14px}
+.pc-feat-no{font-family:"Playfair Display",Georgia,serif;font-size:18px;font-weight:700;color:#a9764f !important;flex:0 0 auto;line-height:1.3}
+.pc-feat b{display:block;font-size:15px;color:#4a3a2e !important;margin-bottom:3px}
+.pc-feat span{display:block;font-size:13.5px;color:#7c6a5a !important;line-height:1.5}
+
+/* ---- FEATURED PRODUCTS ---- */
+.pc-prod-grid{display:grid;grid-template-columns:1fr 1fr 1fr !important;gap:26px}
+.pc-prod{background:#fff !important;border:1px solid #e7ddcc;border-radius:12px;padding:18px 18px 22px;text-align:center;transition:all .2s ease}
+.pc-prod:hover{box-shadow:0 14px 30px rgba(60,40,20,.10);transform:translateY(-3px)}
+.pc-prod-img{display:block;border-radius:8px;overflow:hidden;background:#f5efe4;margin-bottom:16px}
+.pc-prod-img img{width:100%;aspect-ratio:4/5;object-fit:cover;transition:transform .35s ease}
+.pc-prod:hover .pc-prod-img img{transform:scale(1.04)}
+.pc-prod h3{font-family:"Playfair Display",Georgia,serif;font-size:20px;color:#3d3025 !important;margin:0 0 6px}
+.pc-prod-d{font-size:14px;color:#7c6a5a !important;margin:0 0 10px;min-height:38px}
+.pc-prod-price{display:block;font-size:16px;font-weight:700;color:#5E4636 !important;margin-bottom:12px}
+.pc-prod-cta{display:inline-block;font-size:14px;font-weight:700;color:#5E4636 !important;letter-spacing:.3px}
+.pc-prod-cta:hover{color:#3d3025 !important}
+
+/* ---- MATERIALS ---- */
+.pc-mats{background:#fff !important;border-radius:14px}
+.pc-mat-grid{display:grid;grid-template-columns:1fr 1fr 1fr !important;gap:18px}
+.pc-mat{background:#fff !important;border:1px solid #e7ddcc;border-radius:10px;padding:22px 22px 20px;display:block;transition:all .2s ease}
+.pc-mat:hover{border-color:#c9a37a;box-shadow:0 10px 26px rgba(60,40,20,.10);transform:translateY(-3px)}
+.pc-mat-sw{display:block;width:46px;height:46px;border-radius:8px;margin-bottom:14px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.pc-mat b{display:block;font-family:"Playfair Display",Georgia,serif;font-size:20px;color:#3d3025 !important;margin-bottom:6px}
+.pc-mat-d{display:block;font-size:13.5px;color:#7c6a5a !important;line-height:1.5;margin-bottom:14px;min-height:40px}
+.pc-mat-go{font-size:13px;font-weight:700;color:#5E4636 !important;letter-spacing:.3px}
+.pc-chiprow{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px;justify-content:center}
+.pc-chip{display:inline-block;padding:9px 18px;border-radius:30px;background:#fff !important;border:1px solid #e2d6c2;font-size:13.5px;font-weight:600;color:#4a3a2e !important;transition:all .18s ease}
+.pc-chip:hover{background:#5E4636 !important;color:#fff !important;border-color:#5E4636 !important}
+.pc-chip-all{background:#2e241c !important;color:#f2e7d6 !important;border-color:#2e241c !important}
+.pc-chip-all:hover{background:#46362a !important;color:#fff !important;border-color:#46362a !important}
+
+/* ---- SIZE ---- */
+.pc-size-grid{display:grid;grid-template-columns:1.1fr .9fr !important;gap:40px;align-items:start}
+.pc-sizes{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}
+.pc-sz{display:inline-flex;align-items:center;gap:7px;padding:14px 20px;border-radius:8px;background:#fff !important;border:1.5px solid #e7ddcc;font-weight:700;font-size:16px;color:#4a3a2e !important;transition:all .18s ease}
+.pc-sz:hover{border-color:#5E4636;background:#fff !important}
+.pc-sz i{font-style:normal;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#fff !important;background:#5E4636 !important;padding:3px 8px;border-radius:20px}
+.pc-sz-hot{border-color:#5E4636 !important;background:#fff !important}
+.pc-size-note{margin:18px 0 0;font-size:13.5px;color:#8a7461 !important}
+.pc-guide{background:#2e241c !important;border-radius:12px;padding:32px 30px}
+.pc-guide-t{font-family:"Playfair Display",Georgia,serif;font-size:20px;color:#F6F0E5 !important;margin:0 0 20px}
+.pc-step{display:flex;gap:14px;margin-bottom:16px}
+.pc-step-no{flex:0 0 auto;width:28px;height:28px;border-radius:50%;background:#8a6a4e !important;color:#fff !important;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center}
+.pc-step p{margin:2px 0 0;font-size:14.5px;color:#cbb9a6 !important;line-height:1.55}
+.pc-step b{color:#f2e7d6 !important}
+
+/* ---- COLORS ---- */
+.pc-sw-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr !important;gap:16px}
+.pc-swatch{display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 8px;border-radius:10px;background:#fff !important;border:1px solid #e7ddcc;font-size:14px;font-weight:600;color:#4a3a2e !important;transition:all .18s ease}
+.pc-swatch:hover{border-color:#c9a37a;transform:translateY(-3px);box-shadow:0 10px 22px rgba(60,40,20,.10)}
+.pc-dot{width:42px;height:42px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+
+/* ---- WHY PERCENT ---- */
+.pc-why-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr !important;gap:22px}
+.pc-why-card{background:#fff !important;border:1px solid #e7ddcc;border-radius:12px;padding:30px 26px;box-shadow:0 4px 12px rgba(60,40,20,.05)}
+.pc-why-no{font-family:"Playfair Display",Georgia,serif;font-size:30px;font-weight:700;color:#cBA888 !important;display:block;margin-bottom:10px;line-height:1}
+.pc-why-card h4{font-size:17px;color:#3d3025 !important;margin:0 0 8px}
+.pc-why-card p{font-size:14px;color:#7c6a5a !important;line-height:1.55;margin:0}
+
+/* ---- TESTIMONIALS ---- */
+.pc-tm-grid{display:grid;grid-template-columns:1fr 1fr 1fr !important;gap:26px}
+.pc-tm-card{background:#fff !important;border:1px solid #e7ddcc;border-radius:12px;padding:18px 24px 26px;text-align:center;box-shadow:0 4px 12px rgba(60,40,20,.05)}
+.pc-tm-card img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:10px;margin-bottom:16px}
+.pc-tm-q{font-family:"Playfair Display",Georgia,serif;font-style:italic;font-size:16px;line-height:1.55;color:#4a3a2e !important;margin:0 0 12px}
+.pc-tm-a{font-size:14px;font-weight:700;color:#5E4636 !important;margin:0}
+
+/* ---- STORES ---- */
+.pc-store-grid{display:grid;grid-template-columns:1fr 1fr 1fr !important;gap:18px}
+.pc-store{background:#fff !important;border:1px solid #e7ddcc;border-left:3px solid #5E4636 !important;border-radius:8px;padding:22px 22px}
+.pc-store b{display:block;font-size:15px;color:#3d3025 !important;margin-bottom:8px}
+.pc-store p{margin:0 0 10px;font-size:14px;color:#6a5a4a !important;line-height:1.55}
+.pc-store-h{font-size:13px;font-weight:600;color:#5E4636 !important}
+
+/* ---- FAQ ---- */
+.pc-faq{max-width:840px}
+.pc-acc details{background:#fff !important;border:1px solid #e7ddcc;border-radius:8px;margin-bottom:12px;padding:0 22px;overflow:hidden}
+.pc-acc summary{list-style:none;cursor:pointer;padding:18px 0;font-weight:700;font-size:16px;color:#3d3025 !important;position:relative;padding-right:34px}
+.pc-acc summary::-webkit-details-marker{display:none}
+.pc-acc summary::after{content:"+";position:absolute;right:2px;top:14px;font-size:24px;font-weight:400;color:#5E4636 !important;line-height:1}
+.pc-acc details[open] summary::after{content:"\2013"}
+.pc-acc details p{margin:0 0 20px;font-size:15px;color:#6a5a4a !important;line-height:1.6}
+
+/* ---- MADE TO ORDER ---- */
+.pc-order-box{background:#2e241c !important;border-radius:14px;padding:56px 30px;text-align:center}
+.pc-order-sub{font-size:17px;color:#cbb9a6 !important;margin:0 auto 28px;max-width:600px}
+
+/* ---- FINAL CTA ---- */
+.pc-cta{padding:8px 0 0}
+.pc-cta-box{background:#2e241c !important;border-radius:14px;padding:62px 30px;text-align:center}
+.pc-cta-sub{font-size:17px;color:#cbb9a6 !important;margin:0 auto 30px;max-width:560px}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+@media (max-width:849px){
+  .pc-h1{font-size:38px}
+  .pc-h2{font-size:27px}
+  .pc-section{padding:46px 0}
+  .pc-hero-grid{grid-template-columns:1fr !important}
+  .pc-hero-copy{padding:42px 28px}
+  .pc-hero-media{min-height:280px;order:-1}
+  .pc-hero-media img{min-height:280px}
+  .pc-trust{grid-template-columns:1fr 1fr !important}
+  .pc-quote-lg{font-size:23px}
+  .pc-craft-grid{grid-template-columns:1fr !important;gap:28px}
+  .pc-prod-grid{grid-template-columns:1fr 1fr 1fr !important;gap:16px}
+  .pc-mat-grid{grid-template-columns:1fr 1fr !important}
+  .pc-size-grid{grid-template-columns:1fr !important;gap:30px}
+  .pc-sw-grid{grid-template-columns:1fr 1fr 1fr 1fr !important}
+  .pc-why-grid{grid-template-columns:1fr 1fr !important}
+  .pc-tm-grid{grid-template-columns:1fr 1fr 1fr !important;gap:14px}
+  .pc-store-grid{grid-template-columns:1fr 1fr !important}
+}
+@media (max-width:549px){
+  .pc-h1{font-size:32px}
+  .pc-h2{font-size:24px}
+  .pc-lead{font-size:16px}
+  .pc-quote-lg{font-size:20px}
+  .pc-trust{grid-template-columns:1fr 1fr !important}
+  .pc-prod-grid{grid-template-columns:1fr !important}
+  .pc-mat-grid{grid-template-columns:1fr !important}
+  .pc-mat-d{min-height:0}
+  .pc-sw-grid{grid-template-columns:1fr 1fr 1fr !important}
+  .pc-why-grid{grid-template-columns:1fr !important}
+  .pc-tm-grid{grid-template-columns:1fr !important}
+  .pc-store-grid{grid-template-columns:1fr !important}
+  .pc-btn{padding:13px 22px;font-size:14px}
+  .pc-cta-box,.pc-order-box{padding:42px 22px}
+}
+
+/* ================= PATCH v4 — NỀN TRẮNG / CHỮ ĐEN (append-only, đè các rule trên) ================= */
+.pc-wrap{color:#111 !important}
+.pc-h1,.pc-h2,.pc-h2-light,.pc-quote-lg,.pc-guide-t,.pc-mat b,.pc-prod h3{color:#111 !important}
+.pc-lead,.pc-p,.pc-sub,.pc-quote-sm,.pc-mat-d,.pc-prod-d,.pc-store p,.pc-acc details p,.pc-tm-q,.pc-feat span,.pc-order-sub,.pc-cta-sub{color:#222 !important}
+.pc-eyebrow,.pc-eyebrow-light,.pc-quote-sig,.pc-feat-no,.pc-why-no{color:#111 !important}
+.pc-feat b,.pc-why-card h4,.pc-store b,.pc-acc summary{color:#111 !important}
+.pc-why-card p,.pc-cstat span,.pc-hero-meta{color:#444 !important}
+.pc-cstat b,.pc-prod-price,.pc-tm-a,.pc-mat-go,.pc-prod-cta,.pc-store-h,.pc-sz,.pc-swatch,.pc-chip,.pc-acc summary::after{color:#111 !important}
+.pc-link{color:#111 !important;border-color:#999}
+.pc-link:hover{color:#000 !important;border-color:#111}
+/* nền tối -> trắng */
+.pc-hero,.pc-guide,.pc-stats,.pc-order-box,.pc-cta-box{background:#fff !important;border:1px solid #e5e5e5}
+.pc-hero-copy .pc-h1{color:#111 !important}
+.pc-hero-copy .pc-lead{color:#222 !important}
+.pc-hero-media{background:#fff}
+.pc-mats{background:#fff !important;border:1px solid #eee}
+.pc-stat b{color:#111 !important}
+.pc-step p{color:#222 !important}
+.pc-step b{color:#111 !important}
+.pc-step-no,.pc-tick{background:#111 !important;color:#fff !important}
+/* thẻ/viền sáng đồng bộ */
+.pc-trust,.pc-mat,.pc-sz,.pc-swatch,.pc-chip,.pc-store,.pc-acc details,.pc-why-card,.pc-tm-card,.pc-prod{background:#fff !important;border-color:#e5e5e5}
+.pc-trust-item{color:#111 !important}
+.pc-store{border-left:3px solid #111 !important}
+.pc-sz-hot{border-color:#111 !important}
+.pc-sz i{background:#111 !important;color:#fff !important}
+/* nút: đen/trắng */
+.pc-btn-solid,.pc-btn-cream{background:#111 !important;color:#fff !important;border-color:#111 !important}
+.pc-btn-solid:hover,.pc-btn-cream:hover{background:#333 !important;border-color:#333 !important}
+.pc-btn-ghost-light{background:#fff !important;color:#111 !important;border-color:#bbb !important}
+.pc-btn-ghost-light:hover{background:#f5f5f5 !important;border-color:#111 !important}
+.pc-chip:hover{background:#111 !important;color:#fff !important;border-color:#111 !important}
+.pc-chip-all{background:#111 !important;color:#fff !important;border-color:#111 !important}
+.pc-chip-all:hover{background:#333 !important;border-color:#333 !important}
+.pc-mat:hover,.pc-swatch:hover{border-color:#111}
+.pc-sz:hover{border-color:#111}
+
+/* ================= PATCH v5 — FONT BE VIETNAM PRO + AVATAR KHÁCH (append-only) ================= */
+.pc-wrap{font-family:'Be Vietnam Pro',-apple-system,'Segoe UI',Roboto,Arial,sans-serif !important}
+.pc-h1,.pc-h2,.pc-quote-lg,.pc-quote-sig,.pc-guide-t,.pc-mat b,.pc-prod h3,.pc-cstat b,.pc-feat-no,.pc-why-no,.pc-stat b,.pc-tm-q{font-family:'Be Vietnam Pro',Arial,sans-serif !important}
+.pc-h1{font-weight:800;letter-spacing:-1px}
+.pc-h2{font-weight:800}
+.pc-tm-ava{width:64px;height:64px;border-radius:50%;background:#ececec;color:#555;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;margin:0 auto 12px}
+.pc-tm-stars{display:block;text-align:center;color:#f5a623;font-size:15px;letter-spacing:2px;margin-bottom:10px}
+.pc-tm-card{padding-top:26px}
+
+/* ================= PATCH v6 — SEO HERO + PRODUCT GIỮA TRANG (append-only) ================= */
+.pc-hero-logo{height:42px;width:auto;margin:0 0 16px;display:block}
+.pc-tagline{font-size:13px;font-weight:700;letter-spacing:4px;color:#111;margin:0 0 12px;text-transform:uppercase}
+.pc-h1{font-size:38px;line-height:1.18;letter-spacing:-.5px}
+.pc-hero-meta{font-size:13.5px;line-height:1.7;color:#444 !important;max-width:520px}
+.pc-live{padding:56px 0 6px}
+.pc-cta{padding:26px 0 14px}
+@media (max-width:849px){.pc-h1{font-size:30px}}
+@media (max-width:549px){.pc-h1{font-size:25px}}
+
+/* ================= PATCH v7 — HERO KHÔNG ẢNH (logo + content căn giữa) + MOBILE FIRST ================= */
+.pc-hero{margin-top:14px}
+.pc-hero-grid{grid-template-columns:1fr !important}
+.pc-hero-copy{padding:46px 34px;text-align:center;max-width:780px;margin:0 auto}
+.pc-hero-logo{margin:0 auto 14px;height:46px}
+.pc-lead{margin:0 auto 24px;max-width:640px}
+.pc-hero .pc-btns{justify-content:center}
+.pc-hero-meta{margin:22px auto 0;max-width:620px}
+@media (max-width:849px){
+.pc-hero-copy{padding:36px 22px}
+.pc-section{padding:40px 0}
+}
+@media (max-width:549px){
+.pc-hero-copy{padding:30px 16px}
+.pc-hero-logo{height:36px}
+.pc-tagline{font-size:11px;letter-spacing:3px}
+.pc-h1{font-size:24px}
+.pc-lead{font-size:15px}
+.pc-hero-meta{font-size:12.5px}
+.pc-btn{width:100%;text-align:center;padding:14px 18px}
+.pc-btns{gap:10px}
+.pc-section{padding:30px 0}
+.pc-head{margin-bottom:22px}
+.pc-h2{font-size:21px}
+.pc-sub{font-size:14px}
+.pc-quote-lg{font-size:17px}
+.pc-trust{padding:12px 10px;gap:8px}
+.pc-trust-item{font-size:12px}
+.pc-cta-box,.pc-order-box{padding:30px 18px}
+.pc-guide{padding:22px 16px}
+.pc-sz{padding:11px 14px;font-size:14px}
+.pc-sw-grid{gap:10px}
+.pc-swatch{padding:12px 6px;font-size:12.5px}
+.pc-dot{width:34px;height:34px}
+.pc-mat{padding:16px 16px 14px}
+.pc-store{padding:16px}
+.pc-acc summary{font-size:14.5px;padding:14px 0}
+.pc-acc details p{font-size:14px}
+.pc-chip{padding:8px 13px;font-size:12.5px}
+}
+.skin-color-black{background:#0e0e10}.skin-color-brown{background:#70452a}.skin-color-sepia{background:#66332b}.skin-color-tan{background:#795038}.skin-color-beige{background:#6c490a}.skin-color-etoupe{background:#766a5e}.skin-color-grey{background:#2f3234}.skin-color-white{background:#f1ece1}.skin-color-red{background:#a72920}.skin-color-orange{background:#ba481b}.skin-color-gold{background:#ba8f4c}.skin-color-pink{background:#d8a0a6}.skin-color-purple{background:#47243c}.skin-color-navy{background:#000080}.skin-color-light-blue{background:#38a4c7}.skin-color-grey-blue{background:#6B7B8C}.skin-color-moss-green{background:#50533c}.skin-color-avocado{background:#6C8F32}html{scroll-behavior:smooth}body{margin:0;background:#ffffff}.rv-bar{position:sticky;top:0;z-index:50;background:#111;color:#eee;font-family:"Be Vietnam Pro",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 20px;box-shadow:0 2px 14px rgba(0,0,0,.18)}.rv-bar b{font-size:15px;letter-spacing:.5px;color:#fff}.rv-tag{background:#fff;color:#111;font-size:11px;font-weight:700;letter-spacing:.5px;padding:4px 10px;border-radius:20px}.rv-note{max-width:1180px;margin:0 auto;padding:18px 16px 0;font-family:"Be Vietnam Pro",sans-serif;font-size:13px;color:#888}.wd-ph{max-width:1148px;margin:10px auto 60px;padding:44px 16px;border:2px dashed #ccc;border-radius:10px;text-align:center;color:#999;font-family:"Be Vietnam Pro",sans-serif;font-size:14px}/* ===== Lưới sản phẩm mô phỏng WooCommerce/Flatsome (demo) ===== */
+.wd-wrap{max-width:1180px;margin:0 auto;padding:10px 16px 70px;font-family:'Be Vietnam Pro',-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wd-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;margin-bottom:18px;border-bottom:1px solid #ececec}
+.wd-count{margin:0;font-size:14px;color:#777}
+.wd-sort{border:1px solid #ddd;border-radius:4px;padding:8px 14px;font-size:13px;color:#666;background:#fff;white-space:nowrap}
+.wd-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:34px 22px}
+.wd-item{text-align:center}
+.wd-media{display:block;position:relative;background:#fff;overflow:hidden}
+.wd-media img{width:100%;aspect-ratio:1/1;object-fit:contain;display:block;transition:transform .3s ease}
+.wd-item:hover .wd-media img{transform:scale(1.05)}
+.wd-badges{position:absolute;left:0;bottom:6px;display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left}
+.wd-badge{background:#f5f7fa;border:1px solid #eef1f5;box-shadow:0 1px 2px rgba(0,0,0,.06);border-radius:3px;padding:3px 8px;font-size:11.5px;color:#333;line-height:1.4}
+.wd-title{display:block;margin-top:12px;font-size:15px;font-weight:500;line-height:1.4;color:#334862;text-decoration:none}
+.wd-title:hover{color:#111}
+.wd-price{display:block;margin-top:4px;font-size:15px;font-weight:700;color:#111}
+.wd-more{text-align:center;margin-top:34px}
+.wd-more a{display:inline-block;font-size:14px;font-weight:700;color:#334862;text-decoration:none;border:1px solid #d6dbe3;border-radius:4px;padding:11px 26px}
+.wd-more a:hover{background:#334862;color:#fff;border-color:#334862}
+.wd-note{margin:14px 0 0;font-size:12px;color:#a5a5a5}
+@media (max-width:849px){.wd-grid{grid-template-columns:repeat(3,1fr);gap:26px 14px}}
+@media (max-width:599px){.wd-grid{grid-template-columns:repeat(2,1fr);gap:22px 12px}.wd-bar{flex-direction:column;align-items:flex-start;gap:8px}}
+</style></head><body><div class="rv-bar"><b>PERCENT — Landing dây da · shopdongho.com/percent/</b><span class="rv-tag">DEMO DUYỆT NỘI BỘ</span><a href="3d.html" style="margin-left:auto;background:#9C5A2C;color:#fff;padding:4px 12px;border-radius:6px;text-decoration:none;font-size:11px;font-weight:700;">✨ BẬT 3D BESPOKE STUDIO</a></div><div class="rv-note">v5: hero bỏ ảnh — logo + nội dung căn giữa; tối ưu mobile-first (thu nhỏ cửa sổ hoặc mở điện thoại để kiểm tra). Đã tích hợp <b>3d.html (3D Bespoke Studio)</b>.</div><div class="pc-wrap"><section class="pc-hero"><div class="pc-hero-grid"><div class="pc-hero-copy"><img class="pc-hero-logo" src="img/logo.png" alt="Logo th&#432;&#417;ng hi&#7879;u Percent"><p class="pc-tagline">Thay &#273;&#7893;i &amp; C&#7843;m nh&#7853;n</p><h1 class="pc-h1">D&acirc;y Da &#272;&#7891;ng H&#7891; Th&#7911; C&ocirc;ng Percent</h1><p class="pc-lead">H&atilde;y thay th&#7871; ngay b&#7897; d&acirc;y da c&#361; c&#7911;a b&#7841;n v&agrave; c&#7843;m nh&#7853;n v&#7873; ch&#7845;t l&#432;&#7907;ng c&#7911;a d&acirc;y da &#273;&#7891;ng h&#7891; c&#7911;a th&#432;&#417;ng hi&#7879;u Percent. B&#7841;n s&#7869; kh&ocirc;ng bao gi&#7901; ph&#7843;i h&#7889;i h&#7853;n v&#7873; quy&#7871;t &#273;&#7883;nh n&agrave;y.</p><div class="pc-btns"><a class="pc-btn pc-btn-solid" href="3d.html" style="background:#ba8f4c !important;border-color:#ba8f4c !important;color:#fff !important;">✨ Studio May Đo 3D</a><a class="pc-btn pc-btn-cream" href="#pc-shop">Xem b&#7897; s&#432;u t&#7853;p</a><a class="pc-btn pc-btn-ghost-light" href="https://shopdongho.com/quy-trinh-che-tac-day-da/" target="_blank" rel="noopener">Quy tr&igrave;nh ch&#7871; t&aacute;c</a></div><p class="pc-hero-meta">H&#417;n 1.200 m&#7851;u d&acirc;y da &#273;&#7891;ng h&#7891; handmade &middot; 32 lo&#7841;i da nh&#7853;p kh&#7849;u &Yacute;&ndash;Ph&aacute;p &middot; &#273;&#7911; 14 k&iacute;ch c&#7907; 10&ndash;24mm &middot; gi&aacute; t&#7915; 500.000&#8363; &middot; b&#7843;o h&agrave;nh 12 th&aacute;ng &middot; freeship to&agrave;n qu&#7889;c &middot; l&#7855;p mi&#7877;n ph&iacute; t&#7841;i 6 showroom.</p></div></div></section><section class="pc-trust"><div class="pc-trust-item"><span class="pc-tick">&#10003;</span> Da b&ecirc; ph&ocirc;i &Yacute; nh&#7853;p kh&#7849;u</div><div class="pc-trust-item"><span class="pc-tick">&#10003;</span> Kh&acirc;u tay th&#7911; c&ocirc;ng</div><div class="pc-trust-item"><span class="pc-tick">&#10003;</span> B&#7843;o h&agrave;nh 12 th&aacute;ng</div><div class="pc-trust-item"><span class="pc-tick">&#10003;</span> Freeship to&agrave;n qu&#7889;c</div></section><section class="pc-section pc-mats"><div class="pc-head"><span class="pc-eyebrow">B&#7896; S&#431;U T&#7852;P</span><h2 class="pc-h2">Ch&#7885;n theo ch&#7845;t li&#7879;u da</h2><p class="pc-sub">H&#417;n 40 d&ograve;ng da, t&#7915; da b&ecirc; tr&#417;n cao c&#7845;p &#273;&#7871;n da exotic c&aacute; s&#7845;u, k&#7923; &#273;&agrave;, &#273;&agrave; &#273;i&#7875;u.</p></div><div class="pc-mat-grid"><a class="pc-mat" href="https://shopdongho.com/swift/"><span class="pc-mat-sw" style="background:#6b4226"></span><b>Swift</b><span class="pc-mat-d">Da b&ecirc; Ph&aacute;p m&#7883;n, m&#7873;m m&#432;&#7907;t, l&ecirc;n m&agrave;u s&acirc;u</span><span class="pc-mat-go">Xem &rarr;</span></a><a class="pc-mat" href="https://shopdongho.com/togo-weinheimer/"><span class="pc-mat-sw" style="background:#7a4a28"></span><b>Togo</b><span class="pc-mat-d">V&acirc;n h&#7841;t nh&#7887; &#273;&#7863;c tr&#432;ng, ch&#7889;ng x&#432;&#7899;c t&#7889;t</span><span class="pc-mat-go">Xem &rarr;</span></a><a class="pc-mat" href="https://shopdongho.com/epsom/"><span class="pc-mat-sw" style="background:#8a5a30"></span><b>Epsom</b><span class="pc-mat-d">V&acirc;n d&#7853;p &#273;&#7873;u, gi&#7919; phom, sang tr&#7885;ng</span><span class="pc-mat-go">Xem &rarr;</span></a><a class="pc-mat" href="https://shopdongho.com/vachetta/"><span class="pc-mat-sw" style="background:#c79a63"></span><b>Vachetta</b><span class="pc-mat-d">Da b&ograve; t&#7921; nhi&ecirc;n, l&ecirc;n patina theo th&#7901;i gian</span><span class="pc-mat-go">Xem &rarr;</span></a><a class="pc-mat" href="https://shopdongho.com/ca-sau-crocodile/"><span class="pc-mat-sw" style="background:#3f2c1c"></span><b>C&aacute; s&#7845;u Crocodile</b><span class="pc-mat-d">Da c&aacute; s&#7845;u th&#7853;t, v&acirc;n &ocirc; &#273;&#7857;ng c&#7845;p</span><span class="pc-mat-go">Xem &rarr;</span></a><a class="pc-mat" href="https://shopdongho.com/ky-da-lizard/"><span class="pc-mat-sw" style="background:#5c4a30"></span><b>K&#7923; &#273;&agrave; Lizard</b><span class="pc-mat-d">V&acirc;n k&#7923; &#273;&agrave; tinh t&#7871;, nh&#7865; &amp; b&#7873;n</span><span class="pc-mat-go">Xem &rarr;</span></a></div><div class="pc-chiprow"><a class="pc-chip" href="https://shopdongho.com/alran-sully/">Alran Sully</a><a class="pc-chip" href="https://shopdongho.com/buttero/">Buttero</a><a class="pc-chip" href="https://shopdongho.com/taiga/">Taiga</a><a class="pc-chip" href="https://shopdongho.com/box-calf-weinheimer/">Box</a><a class="pc-chip" href="https://shopdongho.com/madame/">Madame</a><a class="pc-chip" href="https://shopdongho.com/barenia/">Barenia</a><a class="pc-chip" href="https://shopdongho.com/barenia-faubourg/">Barenia Faubourg</a><a class="pc-chip" href="https://shopdongho.com/baranil/">Baranil</a><a class="pc-chip" href="https://shopdongho.com/himeji-kurozan/">Himeji Kurozan</a><a class="pc-chip" href="https://shopdongho.com/saffiano/">Saffiano</a><a class="pc-chip" href="https://shopdongho.com/pueblo/">Pueblo</a><a class="pc-chip" href="https://shopdongho.com/babele/">Babele</a><a class="pc-chip" href="https://shopdongho.com/mozart/">Mozart</a><a class="pc-chip" href="https://shopdongho.com/clemence/">Clemence</a><a class="pc-chip" href="https://shopdongho.com/nappa/">Nappa</a><a class="pc-chip" href="https://shopdongho.com/epi/">Epi</a><a class="pc-chip" href="https://shopdongho.com/bo-van-ca-sau/">B&ograve; v&acirc;n c&aacute; s&#7845;u</a><a class="pc-chip" href="https://shopdongho.com/suede/">Suede</a><a class="pc-chip" href="https://shopdongho.com/bo-calf/">B&ograve;</a><a class="pc-chip" href="https://shopdongho.com/alran-patnat/">Alran Patnat</a><a class="pc-chip" href="https://shopdongho.com/da-dieu-ostrich/">&#272;&agrave; &#272;i&#7875;u</a><a class="pc-chip" href="https://shopdongho.com/de-goat/">D&ecirc;</a><a class="pc-chip" href="https://shopdongho.com/ca-chep-carp/">C&aacute; Ch&eacute;p</a><a class="pc-chip" href="https://shopdongho.com/ca-hoi-salmon/">C&aacute; H&#7891;i</a><a class="pc-chip" href="https://shopdongho.com/can-vas/">Canvas</a><a class="pc-chip" href="https://shopdongho.com/sailcloth/">Sailcloth</a><a class="pc-chip pc-chip-all" href="https://shopdongho.com/percent/">T&#7845;t c&#7843; 32 ch&#7845;t li&#7879;u &rarr;</a></div></section><section class="pc-section pc-size" id="pc-size"><div class="pc-size-grid"><div class="pc-size-left"><span class="pc-eyebrow">K&Iacute;CH TH&#431;&#7898;C</span><h2 class="pc-h2">Ch&#7885;n &#273;&uacute;ng size d&acirc;y</h2><p class="pc-p">Size d&acirc;y = b&#7873; ngang ch&acirc;n c&agrave;ng &#273;&#7891;ng h&#7891; (lug), t&iacute;nh b&#7857;ng mm. Ch&#7885;n size c&#7911;a b&#7841;n b&ecirc;n d&#432;&#7899;i:</p><div class="pc-sizes"><a class="pc-sz" href="https://shopdongho.com/percent/?filter_do-rong-day=24-22-mm">24-22</a><a class="pc-sz" href="https://shopdongho.com/percent/?filter_do-rong-day=22-20-mm">22-20</a><a class="pc-sz" href="https://shopdongho.com/percent/?filter_do-rong-day=21-18-mm">21-18</a><a class="pc-sz" href="https://shopdongho.com/percent/?filter_do-rong-day=20-20-mm">20-20</a><a class="pc-sz pc-sz-hot" href="https://shopdongho.com/percent/?filter_do-rong-day=20-18-mm">20-18 <i>ph&#7893; bi&#7871;n</i></a><a class="pc-sz" href="https://shopdongho.com/percent/?filter_do-rong-day=19-16-mm">19-16</a><a class="pc-sz" href="https://shopdongho.com/percent/?filter_do-rong-day=18-16-mm">18-16</a><a class="pc-sz" href="https://shopdongho.com/percent/?filter_do-rong-day=16-14-mm">16-14</a><a class="pc-sz" href="https://shopdongho.com/percent/?filter_do-rong-day=15-12-mm">15-12</a><a class="pc-sz" href="https://shopdongho.com/percent/?filter_do-rong-day=14-13-mm">14-13</a><a class="pc-sz" href="https://shopdongho.com/percent/?filter_do-rong-day=14-12-mm">14-12</a><a class="pc-sz" href="https://shopdongho.com/percent/?filter_do-rong-day=12-11-mm">12-11</a><a class="pc-sz" href="https://shopdongho.com/percent/?filter_do-rong-day=12-10-mm">12-10</a><a class="pc-sz" href="https://shopdongho.com/percent/?filter_do-rong-day=10-9-mm">10-9</a></div></div><div class="pc-guide"><h3 class="pc-guide-t">C&aacute;ch &#273;o size trong 30 gi&acirc;y</h3><div class="pc-step"><span class="pc-step-no">1</span><p>Th&aacute;o d&acirc;y c&#361;, &#273;o <b>b&#7873; ngang khe ch&acirc;n c&agrave;ng</b> (n&#417;i g&#7855;n d&acirc;y) b&#7857;ng th&#432;&#7899;c, t&iacute;nh theo mm.</p></div><div class="pc-step"><span class="pc-step-no">2</span><p>S&#7889; <b>&#273;&#7847;u</b> l&agrave; b&#7873; ngang ch&acirc;n c&agrave;ng, s&#7889; <b>sau</b> l&agrave; b&#7873; ngang &#273;&#7847;u kh&oacute;a (vd 20-18mm).</p></div><div class="pc-step"><span class="pc-step-no">3</span><p>Kh&ocirc;ng ch&#7855;c? Nh&#7855;n <b>Zalo</b> g&#7917;i &#7843;nh m&#7863;t sau &#273;&#7891;ng h&#7891;, shop tra c&#7913;u &amp; t&#432; v&#7845;n mi&#7877;n ph&iacute;.</p></div><a class="pc-btn pc-btn-solid pc-btn-sm" href="https://zalo.me/0902678910">Nh&#7855;n Zalo t&#432; v&#7845;n size</a></div></div></section><section class="pc-section pc-live"><div class="pc-head"><span class="pc-eyebrow">S&#7842;N PH&#7848;M</span><h2 class="pc-h2">M&#7851;u d&acirc;y b&aacute;n ch&#7841;y</h2><p class="pc-sub">Gi&aacute; hi&#7875;n th&#7883; live theo website &mdash; b&#7845;m v&agrave;o s&#7843;n ph&#7849;m &#273;&#7875; xem chi ti&#7871;t &amp; &#273;&#7863;t mua.</p></div> <div class="wd-grid">
+    <div class="wd-item"><a class="wd-media" href="https://shopdongho.com/percent-agon-soil/"><img src="img/p01.jpg" alt="Dây Da Percent Agon Soil" loading="lazy"><span class="wd-badges"><span class="wd-badge">🏷 Soil</span><span class="wd-badge">📏 20 - 20 mm</span></span></a><a class="wd-title" href="https://shopdongho.com/percent-agon-soil/">Dây Da Percent Agon Soil</a><span class="wd-price">600.000₫</span></div>
+    <div class="wd-item"><a class="wd-media" href="https://shopdongho.com/percent-cosimo-soil/"><img src="img/p02.jpg" alt="Dây Da Percent Cosimo Soil" loading="lazy"><span class="wd-badges"><span class="wd-badge">🏷 Soil</span><span class="wd-badge">📏 20 - 18 mm</span></span></a><a class="wd-title" href="https://shopdongho.com/percent-cosimo-soil/">Dây Da Percent Cosimo Soil</a><span class="wd-price">580.000₫</span></div>
+    <div class="wd-item"><a class="wd-media" href="https://shopdongho.com/percent-knut-black/"><img src="img/p03.jpg" alt="Dây Da Percent Knut Black" loading="lazy"><span class="wd-badges"><span class="wd-badge">🏷 Black</span><span class="wd-badge">📏 20 - 18 mm</span></span></a><a class="wd-title" href="https://shopdongho.com/percent-knut-black/">Dây Da Percent Knut Black</a><span class="wd-price">520.000₫</span></div>
+    <div class="wd-item"><a class="wd-media" href="https://shopdongho.com/percent-karl-sepia/"><img src="img/p04.jpg" alt="Dây Da Percent Karl Sepia" loading="lazy"><span class="wd-badges"><span class="wd-badge">🏷 Sepia</span><span class="wd-badge">📏 20 - 18 mm</span></span></a><a class="wd-title" href="https://shopdongho.com/percent-karl-sepia/">Dây Da Percent Karl Sepia</a><span class="wd-price">580.000₫</span></div>
+    <div class="wd-item"><a class="wd-media" href="https://shopdongho.com/percent-bruno-gold/"><img src="img/p05.jpg" alt="Dây Da Percent Bruno Gold" loading="lazy"><span class="wd-badges"><span class="wd-badge">🏷 Gold</span><span class="wd-badge">📏 20 - 18 mm</span></span></a><a class="wd-title" href="https://shopdongho.com/percent-bruno-gold/">Dây Da Percent Bruno Gold</a><span class="wd-price">580.000₫</span></div>
+    <div class="wd-item"><a class="wd-media" href="https://shopdongho.com/percent-kantas-black/"><img src="img/p06.jpg" alt="Dây Da Percent Kantas Black" loading="lazy"><span class="wd-badges"><span class="wd-badge">🏷 Black</span><span class="wd-badge">📏 20 - 18 mm</span></span></a><a class="wd-title" href="https://shopdongho.com/percent-kantas-black/">Dây Da Percent Kantas Black</a><span class="wd-price">680.000₫</span></div>
+    <div class="wd-item"><a class="wd-media" href="https://shopdongho.com/percent-alessio-black/"><img src="img/p07.jpg" alt="Dây Da Percent Alessio Black" loading="lazy"><span class="wd-badges"><span class="wd-badge">🏷 Black</span><span class="wd-badge">📏 20 - 18 mm</span></span></a><a class="wd-title" href="https://shopdongho.com/percent-alessio-black/">Dây Da Percent Alessio Black</a><span class="wd-price">550.000₫</span></div>
+    <div class="wd-item"><a class="wd-media" href="https://shopdongho.com/percent-cosimo-navy/"><img src="img/p08.jpg" alt="Dây Da Percent Cosimo Navy" loading="lazy"><span class="wd-badges"><span class="wd-badge">🏷 Navy</span><span class="wd-badge">📏 20 - 18 mm</span></span></a><a class="wd-title" href="https://shopdongho.com/percent-cosimo-navy/">Dây Da Percent Cosimo Navy</a><span class="wd-price">580.000₫</span></div>
+    <div class="wd-item"><a class="wd-media" href="https://shopdongho.com/percent-fabio-black/"><img src="img/p09.jpg" alt="Dây Da Percent Fabio Black" loading="lazy"><span class="wd-badges"><span class="wd-badge">🏷 Black</span><span class="wd-badge">📏 20 - 18 mm</span></span></a><a class="wd-title" href="https://shopdongho.com/percent-fabio-black/">Dây Da Percent Fabio Black</a><span class="wd-price">550.000₫</span></div>
+    <div class="wd-item"><a class="wd-media" href="https://shopdongho.com/percent-matteo-wine-red/"><img src="img/p10.jpg" alt="Dây Da Percent Matteo Wine Red" loading="lazy"><span class="wd-badges"><span class="wd-badge">🏷 Wine Red</span><span class="wd-badge">📏 20 - 18 mm</span></span></a><a class="wd-title" href="https://shopdongho.com/percent-matteo-wine-red/">Dây Da Percent Matteo Wine Red</a><span class="wd-price">580.000₫</span></div>
+    <div class="wd-item"><a class="wd-media" href="https://shopdongho.com/percent-renzo-umbra-grey/"><img src="img/p11.jpg" alt="Dây Da Percent Renzo Umbra Grey" loading="lazy"><span class="wd-badges"><span class="wd-badge">🏷 Umbra Grey</span><span class="wd-badge">📏 20 - 18 mm</span></span></a><a class="wd-title" href="https://shopdongho.com/percent-renzo-umbra-grey/">Dây Da Percent Renzo Umbra Grey</a><span class="wd-price">550.000₫</span></div>
+    <div class="wd-item"><a class="wd-media" href="https://shopdongho.com/percent-tico-gold/"><img src="img/p12.jpg" alt="Dây Da Percent Tico Gold" loading="lazy"><span class="wd-badges"><span class="wd-badge">🏷 Gold</span><span class="wd-badge">📏 20 - 18 mm</span></span></a><a class="wd-title" href="https://shopdongho.com/percent-tico-gold/">Dây Da Percent Tico Gold</a><span class="wd-price">580.000₫</span></div>
+  </div> </section><section class="pc-cta"><div class="pc-cta-box"><h2 class="pc-h2 pc-h2-light">H&atilde;y thay th&#7871; ngay b&#7897; d&acirc;y da c&#361; c&#7911;a b&#7841;n</h2><p class="pc-cta-sub">C&#7843;m nh&#7853;n ch&#7845;t l&#432;&#7907;ng d&acirc;y da th&#7911; c&ocirc;ng Percent v&#7899;i h&#417;n 1.200 m&#7851;u b&ecirc;n d&#432;&#7899;i &mdash; b&#7841;n s&#7869; kh&ocirc;ng bao gi&#7901; ph&#7843;i h&#7889;i h&#7853;n v&#7873; quy&#7871;t &#273;&#7883;nh n&agrave;y.</p><div class="pc-btns pc-btns-center"><a class="pc-btn pc-btn-cream" href="#pc-shop">Xem 1.200+ m&#7851;u d&acirc;y &darr;</a><a class="pc-btn pc-btn-ghost-light" href="tel:0902678910">G&#7885;i 0902.678.910</a></div></div></section><section class="pc-section pc-colors"><div class="pc-head"><span class="pc-eyebrow">M&Agrave;U S&#7854;C</span><h2 class="pc-h2">Ch&#7885;n theo m&agrave;u</h2><p class="pc-sub">&#272;&uacute;ng 19 t&ocirc;ng m&agrave;u theo b&#7897; l&#7885;c c&#7911;a shop &mdash; t&#7915; trung t&iacute;nh c&#7893; &#273;i&#7875;n &#273;&#7871;n s&#7855;c n&#7893;i b&#7853;t.</p></div><div class="pc-sw-grid"><a class="pc-swatch" href="https://shopdongho.com/percent/?filter_mau-da-mat=den"><span class="pc-dot skin-color-black"></span>&#272;en</a><a class="pc-swatch" href="https://shopdongho.com/percent/?filter_mau-da-mat=nau"><span class="pc-dot skin-color-brown"></span>N&acirc;u</a><a class="pc-swatch" href="https://shopdongho.com/percent/?filter_mau-da-mat=nau-do"><span class="pc-dot skin-color-sepia"></span>N&acirc;u &#272;&#7887;</a><a class="pc-swatch" href="https://shopdongho.com/percent/?filter_mau-da-mat=nau-vang"><span class="pc-dot skin-color-tan"></span>N&acirc;u V&agrave;ng</a><a class="pc-swatch" href="https://shopdongho.com/percent/?filter_mau-da-mat=be"><span class="pc-dot skin-color-beige"></span>Be</a><a class="pc-swatch" href="https://shopdongho.com/percent/?filter_mau-da-mat=etoupe"><span class="pc-dot skin-color-etoupe"></span>Etoupe</a><a class="pc-swatch" href="https://shopdongho.com/percent/?filter_mau-da-mat=xam"><span class="pc-dot skin-color-grey"></span>X&aacute;m</a><a class="pc-swatch" href="https://shopdongho.com/percent/?filter_mau-da-mat=trang"><span class="pc-dot skin-color-white"></span>Tr&#7855;ng</a><a class="pc-swatch" href="https://shopdongho.com/percent/?filter_mau-da-mat=do"><span class="pc-dot skin-color-red"></span>&#272;&#7887;</a><a class="pc-swatch" href="https://shopdongho.com/percent/?filter_mau-da-mat=cam"><span class="pc-dot skin-color-orange"></span>Cam</a><a class="pc-swatch" href="https://shopdongho.com/percent/?filter_mau-da-mat=vang"><span class="pc-dot skin-color-gold"></span>V&agrave;ng</a><a class="pc-swatch" href="https://shopdongho.com/percent/?filter_mau-da-mat=hong"><span class="pc-dot skin-color-pink"></span>H&#7891;ng</a><a class="pc-swatch" href="https://shopdongho.com/percent/?filter_mau-da-mat=tim"><span class="pc-dot skin-color-purple"></span>T&iacute;m</a><a class="pc-swatch" href="https://shopdongho.com/percent/?filter_mau-da-mat=xanh-navy"><span class="pc-dot skin-color-navy"></span>Xanh Navy</a><a class="pc-swatch" href="https://shopdongho.com/percent/?filter_mau-da-mat=xanh-duong"><span class="pc-dot skin-color-light-blue"></span>Xanh D&#432;&#417;ng</a><a class="pc-swatch" href="https://shopdongho.com/percent/?filter_mau-da-mat=xanh-xam"><span class="pc-dot skin-color-grey-blue"></span>Xanh X&aacute;m</a><a class="pc-swatch" href="https://shopdongho.com/percent/?filter_mau-da-mat=xanh-reu"><span class="pc-dot skin-color-moss-green"></span>Xanh R&ecirc;u</a><a class="pc-swatch" href="https://shopdongho.com/percent/?filter_mau-da-mat=xanh-la"><span class="pc-dot skin-color-avocado"></span>Xanh L&aacute;</a><a class="pc-swatch" href="https://shopdongho.com/percent/?filter_mau-da-mat=xanh-bo"><span class="pc-dot" style="background:#9fae7e"></span>Xanh B&#417;</a></div></section><section class="pc-section pc-craft"><div class="pc-craft-grid"><div class="pc-craft-media"><img src="img/craft.webp" alt="Ngh&#7879; nh&acirc;n ch&#7871; t&aacute;c d&acirc;y da Percent" loading="lazy"></div><div class="pc-craft-copy"><span class="pc-eyebrow">QUY TR&Igrave;NH CH&#7870; T&Aacute;C</span><h2 class="pc-h2">H&#417;n 18 b&#432;&#7899;c th&#7911; c&ocirc;ng cho m&#7895;i s&#7907;i d&acirc;y</h2><p class="pc-p">Percent ch&#7871; t&aacute;c t&#7915; da b&ecirc; ph&ocirc;i &Yacute; c&ugrave;ng nhi&#7873;u d&ograve;ng da thu&#7897;c t&#7921; nhi&ecirc;n nh&#7853;p kh&#7849;u. M&#7895;i s&#7907;i d&acirc;y tr&#7843;i qua h&#417;n 18 c&ocirc;ng &#273;o&#7841;n th&#7911; c&ocirc;ng, k&eacute;o d&agrave;i 4&ndash;6 gi&#7901;, ho&agrave;n thi&#7879;n b&#7903;i &#273;&#7897;i ng&#361; ngh&#7879; nh&acirc;n l&agrave;nh ngh&#7873;.</p><div class="pc-cstats"><div class="pc-cstat"><b>18+</b><span>B&#432;&#7899;c th&#7911; c&ocirc;ng</span></div><div class="pc-cstat"><b>4&ndash;6 gi&#7901;</b><span>M&#7895;i s&#7907;i d&acirc;y</span></div><div class="pc-cstat"><b>100%</b><span>L&agrave;m b&#7857;ng tay</span></div></div><div class="pc-feats"><div class="pc-feat"><span class="pc-feat-no">01</span><div><b>Da b&ecirc; ph&ocirc;i &Yacute; thu&#7897;c th&#7843;o m&#7897;c</b><span>Nh&#7853;p t&#7915; c&aacute;c x&#432;&#7903;ng thu&#7897;c da uy t&iacute;n, l&ecirc;n patina &#273;&#7865;p theo th&#7901;i gian.</span></div></div><div class="pc-feat"><span class="pc-feat-no">02</span><div><b>Kh&acirc;u tay saddle-stitch</b><span>&#272;&#432;&#7901;ng ch&#7881; b&#7873;n g&#7845;p &#273;&ocirc;i kh&acirc;u m&aacute;y &mdash; m&#7897;t m&#361;i &#273;&#7913;t, c&#7843; &#273;&#432;&#7901;ng v&#7851;n gi&#7919;.</span></div></div><div class="pc-feat"><span class="pc-feat-no">03</span><div><b>S&#417;n c&#7841;nh nhi&#7873;u l&#7899;p</b><span>C&#7841;nh d&acirc;y m&#7883;n, &#273;&#7873;u, ch&#7889;ng th&#7845;m v&agrave; kh&ocirc;ng bong tr&oacute;c.</span></div></div></div><a class="pc-link" href="https://shopdongho.com/quy-trinh-che-tac-day-da/" target="_blank" rel="noopener">Kh&aacute;m ph&aacute; quy tr&igrave;nh ch&#7871; t&aacute;c chi ti&#7871;t &rarr;</a></div></div></section><section class="pc-section pc-quote"><p class="pc-quote-lg">&ldquo;Khi d&acirc;y &#273;&#7891;ng h&#7891; &#273;&atilde; h&#7887;ng, ph&#7847;n &#273;&ocirc;ng ch&uacute;ng ta th&#432;&#7901;ng thay &#273;&#7841;i m&#7897;t s&#7907;i kh&aacute;c &mdash; v&ocirc; t&igrave;nh l&agrave;m chi&#7871;c &#273;&#7891;ng h&#7891; m&#7845;t &#273;i gi&aacute; tr&#7883; v&#7889;n c&oacute;.&rdquo;</p><p class="pc-quote-sm">Ch&uacute;ng t&ocirc;i kh&ocirc;ng ch&#7881; b&aacute;n d&acirc;y da &#273;&#7875; thay th&#7871;. Ch&uacute;ng t&ocirc;i mang &#273;&#7871;n nh&#7919;ng l&#7921;a ch&#7885;n m&#7899;i, gi&uacute;p chi&#7871;c &#273;&#7891;ng h&#7891; c&#7911;a b&#7841;n tr&#7903; th&agrave;nh m&#7897;t phi&ecirc;n b&#7843;n phong c&aacute;ch h&#417;n, ho&agrave;n h&#7843;o h&#417;n.</p><div class="pc-quote-sig">H&Atilde;Y THAY &#272;&#7892;I V&Agrave; C&#7842;M NH&#7852;N</div></section><section class="pc-section pc-why"><div class="pc-head"><span class="pc-eyebrow">GI&Aacute; TR&#7882; C&#7888;T L&Otilde;I</span><h2 class="pc-h2">V&igrave; sao ch&#7885;n Percent?</h2></div><div class="pc-why-grid"><div class="pc-why-card"><span class="pc-why-no">01</span><h4>Da th&#7853;t nh&#7853;p kh&#7849;u</h4><p>B&#7855;t &#273;&#7847;u t&#7915; nh&#7919;ng t&#7845;m da ch&#7885;n l&#7885;c t&#7915; c&aacute;c x&#432;&#7903;ng thu&#7897;c da tr&ecirc;n kh&#7855;p th&#7871; gi&#7899;i, &#273;&#7863;c bi&#7879;t l&agrave; da b&ecirc; ph&ocirc;i &Yacute;.</p></div><div class="pc-why-card"><span class="pc-why-no">02</span><h4>C&aacute; nh&acirc;n ho&aacute; &#273;&#7897;c &#273;&aacute;o</h4><p>Kh&#7855;c t&ecirc;n, ch&#7885;n m&agrave;u ch&#7881; may theo s&#7903; th&iacute;ch &mdash; m&#7895;i s&#7907;i d&acirc;y mang d&#7845;u &#7845;n ri&ecirc;ng c&#7911;a b&#7841;n.</p></div><div class="pc-why-card"><span class="pc-why-no">03</span><h4>B&#7843;o h&agrave;nh 12 th&aacute;ng</h4><p>B&#7843;o h&agrave;nh 12 th&aacute;ng, h&#7895; tr&#7907; &#273;&#7893;i/tr&#7843;, ch&#259;m s&oacute;c s&#7843;n ph&#7849;m tr&#7885;n &#273;&#7901;i.</p></div><div class="pc-why-card"><span class="pc-why-no">04</span><h4>Xu&#7845;t kh&#7849;u Nh&#7853;t &amp; H&agrave;n</h4><p>Ch&#7845;t l&#432;&#7907;ng &#273;&#432;&#7907;c kh&aacute;ch h&agrave;ng Nh&#7853;t B&#7843;n v&agrave; H&agrave;n Qu&#7889;c tin d&ugrave;ng.</p></div></div></section><section class="pc-section pc-tm"><div class="pc-head"><span class="pc-eyebrow">KH&Aacute;CH H&Agrave;NG</span><h2 class="pc-h2">Kh&aacute;ch h&agrave;ng n&oacute;i g&igrave; v&#7873; Percent</h2></div><div class="pc-tm-grid"><div class="pc-tm-card"><span class="pc-tm-ava">M</span><span class="pc-tm-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span><p class="pc-tm-q">&ldquo;D&acirc;y m&#7873;m, &ocirc;m tay v&agrave; c&#7921;c k&#7923; ch&#7855;c ch&#7855;n. T&ocirc;i b&#7845;t ng&#7901; v&#7899;i ch&#7845;t l&#432;&#7907;ng trong t&#7847;m gi&aacute;.&rdquo;</p><p class="pc-tm-a">&mdash; Anh Minh, H&agrave; N&#7897;i</p></div><div class="pc-tm-card"><span class="pc-tm-ava">T</span><span class="pc-tm-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span><p class="pc-tm-q">&ldquo;D&acirc;y da kh&acirc;u tay r&#7845;t tinh t&#7871;, m&igrave;nh th&iacute;ch c&#7843;m gi&aacute;c th&#7911; c&ocirc;ng v&agrave; m&ugrave;i da t&#7921; nhi&ecirc;n.&rdquo;</p><p class="pc-tm-a">&mdash; Ch&#7883; Thu, &#272;&agrave; N&#7861;ng</p></div><div class="pc-tm-card"><span class="pc-tm-ava">L</span><span class="pc-tm-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span><p class="pc-tm-q">&ldquo;Mua th&ecirc;m c&#7843; v&iacute; Percent &mdash; r&#7845;t ti&#7879;n, g&#7885;n nh&#7865; m&agrave; v&#7851;n sang.&rdquo;</p><p class="pc-tm-a">&mdash; H&#7919;u Long, H&#7891; Ch&iacute; Minh</p></div></div></section><section class="pc-section pc-stores"><div class="pc-head"><span class="pc-eyebrow">H&#7878; TH&#7888;NG C&#7916;A H&Agrave;NG</span><h2 class="pc-h2">&#272;&#7871;n xem &amp; l&#7855;p d&acirc;y tr&#7921;c ti&#7871;p</h2><p class="pc-sub">Mang &#273;&#7891;ng h&#7891; &#273;&#7871;n, k&#7929; thu&#7853;t vi&ecirc;n l&#7855;p d&acirc;y mi&#7877;n ph&iacute; t&#7841;i ch&#7895; &mdash; 8h30 &mdash; 21h30 m&#7895;i ng&agrave;y.</p></div><div class="pc-store-grid"><div class="pc-store"><b>Showroom 1 &middot; Ph&uacute; Nhu&#7853;n</b><p>202 (s&#7889; c&#361; 241) Phan X&iacute;ch Long, P.7, Q. Ph&uacute; Nhu&#7853;n, TP HCM</p><span class="pc-store-h">8h30 &mdash; 21h30</span></div><div class="pc-store"><b>Showroom 2 &middot; Qu&#7853;n 6</b><p>276 Nguy&#7877;n V&#259;n Lu&ocirc;ng, P.12, Q.6, TP HCM</p><span class="pc-store-h">8h30 &mdash; 21h30</span></div><div class="pc-store"><b>Showroom 3 &middot; G&ograve; V&#7845;p</b><p>287 Quang Trung, P.10, Q. G&ograve; V&#7845;p, TP HCM</p><span class="pc-store-h">8h30 &mdash; 21h30</span></div><div class="pc-store"><b>Showroom 4 &middot; Qu&#7853;n 4</b><p>185 Kh&aacute;nh H&#7897;i, P.3, Q.4, TP HCM</p><span class="pc-store-h">8h30 &mdash; 21h30</span></div><div class="pc-store"><b>Showroom 5 &middot; Long Th&agrave;nh</b><p>514 L&ecirc; Du&#7849;n, KP Ph&#432;&#7899;c Thu&#7853;n, H. Long Th&agrave;nh, &#272;&#7891;ng Nai</p><span class="pc-store-h">0901.552.045 &middot; 8h30 &mdash; 21h30</span></div><div class="pc-store"><b>Showroom 6 &middot; H&oacute;c M&ocirc;n</b><p>156 Nguy&#7877;n &#7842;nh Th&#7911;, &#7844;p Trung Ch&aacute;nh 2, X. Trung Ch&aacute;nh, H. H&oacute;c M&ocirc;n</p><span class="pc-store-h">0933.612.615 &middot; 8h30 &mdash; 21h30</span></div></div></section><section class="pc-section pc-order"><div class="pc-order-box"><span class="pc-eyebrow pc-eyebrow-light">MAY &#272;O RI&Ecirc;NG</span><h2 class="pc-h2 pc-h2-light">&#272;&#7863;t d&acirc;y da theo y&ecirc;u c&#7847;u</h2><p class="pc-order-sub">B&#7841;n c&#7847;n size &#273;&#7863;c bi&#7879;t, m&agrave;u da ri&ecirc;ng, kh&#7855;c t&ecirc;n hay ch&#7885;n m&agrave;u ch&#7881; may? Nh&#7855;n cho Percent, ngh&#7879; nh&acirc;n s&#7869; t&#432; v&#7845;n v&agrave; may &#273;o ri&ecirc;ng cho b&#7841;n.</p><div class="pc-btns pc-btns-center"><a class="pc-btn pc-btn-cream" href="https://zalo.me/0902678910">Nh&#7855;n Zalo &#273;&#7863;t may &#273;o</a><a class="pc-btn pc-btn-ghost-light" href="tel:0902678910">G&#7885;i 0902.678.910</a></div></div></section><section class="pc-section pc-faq"><div class="pc-head"><span class="pc-eyebrow">H&#7886;I &amp; &#272;&Aacute;P</span><h2 class="pc-h2">C&acirc;u h&#7887;i th&#432;&#7901;ng g&#7863;p</h2></div><div class="pc-acc"><details><summary>L&agrave;m sao bi&#7871;t &#273;&#7891;ng h&#7891; c&#7911;a t&ocirc;i d&ugrave;ng size d&acirc;y n&agrave;o?</summary><p>Size d&acirc;y ch&iacute;nh l&agrave; b&#7873; ngang khe ch&acirc;n c&agrave;ng &#273;&#7891;ng h&#7891; (lug), t&iacute;nh b&#7857;ng mm. B&#7841;n th&aacute;o d&acirc;y c&#361; ra &#273;o, ho&#7863;c nh&#7855;n Zalo g&#7917;i &#7843;nh + t&ecirc;n m&#7851;u &#273;&#7891;ng h&#7891;, shop tra gi&uacute;p. Ph&#7893; bi&#7871;n nh&#7845;t l&agrave; 20-18mm.</p></details><details><summary>D&acirc;y Percent c&oacute; ph&#7843;i da th&#7853;t kh&ocirc;ng?</summary><p>100% da th&#7853;t. Percent d&ugrave;ng da b&ecirc; ph&ocirc;i &Yacute; thu&#7897;c th&#7843;o m&#7897;c v&agrave; nhi&#7873;u d&ograve;ng da nh&#7853;p kh&#7849;u (Swift, Togo, Epsom, Vachetta&hellip;) c&ugrave;ng da exotic (c&aacute; s&#7845;u, k&#7923; &#273;&agrave;, &#273;&agrave; &#273;i&#7875;u). T&#7845;t c&#7843; kh&acirc;u tay v&agrave; s&#417;n c&#7841;nh th&#7911; c&ocirc;ng.</p></details><details><summary>C&oacute; kh&#7855;c t&ecirc;n / may &#273;o theo y&ecirc;u c&#7847;u kh&ocirc;ng?</summary><p>C&oacute;. Percent nh&#7853;n kh&#7855;c t&ecirc;n, ch&#7885;n m&agrave;u ch&#7881; may v&agrave; may &#273;o size &#273;&#7863;c bi&#7879;t. Nh&#7855;n Zalo &#273;&#7875; &#273;&#432;&#7907;c t&#432; v&#7845;n chi ti&#7871;t.</p></details><details><summary>L&#7855;p d&acirc;y nh&#432; th&#7871; n&agrave;o, c&oacute; m&#7845;t ph&iacute; kh&ocirc;ng?</summary><p>Mang &#273;&#7891;ng h&#7891; &#273;&#7871;n b&#7845;t k&#7923; showroom n&agrave;o trong 6 chi nh&aacute;nh, k&#7929; thu&#7853;t vi&ecirc;n l&#7855;p mi&#7877;n ph&iacute; t&#7841;i ch&#7895;. Mua online th&igrave; d&acirc;y &#273;&atilde; k&egrave;m ch&#7889;t l&#7855;p, b&#7841;n t&#7921; thay r&#7845;t d&#7877;.</p></details><details><summary>Ch&iacute;nh s&aacute;ch giao h&agrave;ng, &#273;&#7893;i tr&#7843; &amp; b&#7843;o h&agrave;nh?</summary><p>Freeship to&agrave;n qu&#7889;c, h&#7895; tr&#7907; COD (ki&#7875;m tra h&agrave;ng tr&#432;&#7899;c khi tr&#7843; ti&#7873;n). &#272;&#7893;i tr&#7843; trong 7 ng&agrave;y n&#7871;u c&ograve;n nguy&ecirc;n tem; b&#7843;o h&agrave;nh 12 th&aacute;ng cho &#273;&#432;&#7901;ng kh&acirc;u &amp; ch&#7845;t l&#432;&#7907;ng da.</p></details></div></section><div id="pc-shop"></div></div><div class="wd-ph">▼ Vị trí LƯỚI 1.214 SẢN PHẨM WooCommerce thật (listing live, filter + phân trang giữ nguyên) ▼</div></body></html>
